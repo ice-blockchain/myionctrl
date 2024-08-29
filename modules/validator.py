@@ -14,12 +14,12 @@ class ValidatorModule(MtcModule):
             color_print("{red}Bad args. Usage:{endc} vo <offer-hash>")
             return
         for offerHash in args:
-            self.ton.VoteOffer(offerHash)
+            self.ion.VoteOffer(offerHash)
         color_print("VoteOffer - {green}OK{endc}")
 
     def vote_election_entry(self, args):
-        from mytoncore.functions import Elections
-        Elections(self.ton.local, self.ton)
+        from myioncore.functions import Elections
+        Elections(self.ion.local, self.ion)
         color_print("VoteElectionEntry - {green}OK{endc}")
 
     def vote_complaint(self, args):
@@ -29,7 +29,7 @@ class ValidatorModule(MtcModule):
         except:
             color_print("{red}Bad args. Usage:{endc} vc <election-id> <complaint-hash>")
             return
-        self.ton.VoteComplaint(election_id, complaint_hash)
+        self.ion.VoteComplaint(election_id, complaint_hash)
         color_print("VoteComplaint - {green}OK{endc}")
 
     def add_console_commands(self, console):

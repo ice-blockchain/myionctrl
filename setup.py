@@ -12,17 +12,17 @@ version = 'v0.1'
 setup(
 	author='igroman787',
 	author_email='igroman787',
-	name='mytonctrl',
+	name='myionctrl',
 	version=version,
 	packages=find_packages('.', exclude=['tests']),
 	install_requires=install_requires,
 	package_data={
-		'mytoninstaller.scripts': ['*.sh'],
-		'mytoncore': [
+		'myioninstaller.scripts': ['*.sh'],
+		'myioncore': [
 			'contracts/**/*',
 			'complaints/*'
 		],
-		'mytonctrl': [
+		'myionctrl': [
 			'resources/*', 
 			'scripts/*', 
 			'migrations/*.sh'
@@ -42,8 +42,8 @@ setup(
 		 "License :: Other/Proprietary License",
 		 "Topic :: Software Development :: Libraries"
 	],
-	url="https://github.com/ton-blockchain/mytonctrl",
-	description="MyTonCtrl",
+	url="https://github.com/ice-blockchain/myionctrl",
+	description="MyIonCtrl",
 	long_description_content_type="text/markdown",
 	long_description=long_description,
 )

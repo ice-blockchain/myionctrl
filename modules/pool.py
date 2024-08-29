@@ -12,15 +12,15 @@ class PoolModule(MtcModule):
     def print_pools_list(self, args):
         table = list()
         table += [["Name", "Status", "Balance", "Version", "Address"]]
-        data = self.ton.GetPools()
+        data = self.ion.GetPools()
         if data is None or len(data) == 0:
             print("No data")
             return
         for pool in data:
-            account = self.ton.GetAccount(pool.addrB64)
+            account = self.ion.GetAccount(pool.addrB64)
             if account.status != "active":
                 pool.addrB64 = pool.addrB64_init
-            version = self.ton.GetVersionFromCodeHash(account.codeHash)
+            version = self.ion.GetVersionFromCodeHash(account.codeHash)
             table += [[pool.name, account.status, account.balance, version, pool.addrB64]]
         print_table(table)
 
@@ -30,15 +30,15 @@ class PoolModule(MtcModule):
         except:
             color_print("{red}Bad args. Usage:{endc} delete_pool <pool-name>")
             return
-        pool = self.ton.GetLocalPool(pool_name)
+        pool = self.ion.GetLocalPool(pool_name)
         pool.Delete()
         color_print("DeletePool - {green}OK{endc}")
     # end define
 
     def do_import_pool(self, pool_name, addr_b64):
         self.check_download_pool_contract_scripts()
-        addr_bytes = self.ton.addr_b64_to_bytes(addr_b64)
-        pool_path = self.ton.poolsDir + pool_name
+        addr_bytes = self.ion.addr_b64_to_bytes(addr_b64)
+        pool_path = self.ion.poolsDir + pool_name
         with open(pool_path + ".addr", 'wb') as file:
             file.write(addr_bytes)
     # end define
@@ -54,18 +54,18 @@ class PoolModule(MtcModule):
         color_print("import_pool - {green}OK{endc}")
 
     def check_download_pool_contract_scripts(self):
-        contract_path = self.ton.contractsDir + "nominator-pool/"
+        contract_path = self.ion.contractsDir + "nominator-pool/"
         if not os.path.isdir(contract_path):
-            self.ton.DownloadContract("https://github.com/ton-blockchain/nominator-pool")
+            self.ion.DownloadContract("https://github.com/ice-blockchain/nominator-pool")
 
     def do_deposit_to_pool(self, pool_addr, amount):
-        wallet = self.ton.GetValidatorWallet()
-        bocPath = self.ton.local.buffer.my_temp_dir + wallet.name + "validator-deposit-query.boc"
-        fiftScript = self.ton.contractsDir + "nominator-pool/func/validator-deposit.fif"
+        wallet = self.ion.GetValidatorWallet()
+        bocPath = self.ion.local.buffer.my_temp_dir + wallet.name + "validator-deposit-query.boc"
+        fiftScript = self.ion.contractsDir + "nominator-pool/func/validator-deposit.fif"
         args = [fiftScript, bocPath]
-        result = self.ton.fift.Run(args)
-        resultFilePath = self.ton.SignBocWithWallet(wallet, bocPath, pool_addr, amount)
-        self.ton.SendFile(resultFilePath, wallet)
+        result = self.ion.fift.Run(args)
+        resultFilePath = self.ion.SignBocWithWallet(wallet, bocPath, pool_addr, amount)
+        self.ion.SendFile(resultFilePath, wallet)
 
     def deposit_to_pool(self, args):
         try:
@@ -78,11 +78,11 @@ class PoolModule(MtcModule):
         color_print("DepositToPool - {green}OK{endc}")
 
     def do_withdraw_from_pool(self, pool_addr, amount):
-        pool_data = self.ton.GetPoolData(pool_addr)
+        pool_data = self.ion.GetPoolData(pool_addr)
         if pool_data["state"] == 0:
-            self.ton.WithdrawFromPoolProcess(pool_addr, amount)
+            self.ion.WithdrawFromPoolProcess(pool_addr, amount)
         else:
-            self.ton.PendWithdrawFromPool(pool_addr, amount)
+            self.ion.PendWithdrawFromPool(pool_addr, amount)
 
     def withdraw_from_pool(self, args):
         try:

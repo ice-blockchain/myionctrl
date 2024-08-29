@@ -12,21 +12,21 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-author="ton-blockchain"
-repo="mytonctrl"
+author="ice-blockchain"
+repo="myionctrl"
 branch="master"
 mode="validator"
 
 show_help_and_exit() {
   echo 'Supported argumets:'
-  echo ' -c  PATH         Provide custom config for toninstaller.sh'
+  echo ' -c  PATH         Provide custom config for ioninstaller.sh'
   echo ' -t               Disable telemetry'
   echo ' -i               Ignore minimum reqiurements'
   echo ' -d               Use pre-packaged dump. Reduces duration of initial synchronization.'
-  echo ' -a               Set MyTonCtrl git repo author'
-	echo ' -r               Set MyTonCtrl git repo'
-	echo ' -b               Set MyTonCtrl git repo branch'
-	echo ' -m  MODE             Install MyTonCtrl with specified mode (validator or liteserver)'
+  echo ' -a               Set MyIonCtrl git repo author'
+	echo ' -r               Set MyIonCtrl git repo'
+	echo ' -b               Set MyIonCtrl git repo branch'
+	echo ' -m  MODE             Install MyIonCtrl with specified mode (validator or liteserver)'
 	echo ' -h               Show this help'
     exit
 }
@@ -36,7 +36,7 @@ if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
 fi
 
 # node install parameters
-config="https://ton-blockchain.github.io/global.config.json"
+config="http://94.100.16.219/configs/global.config.json"
 telemetry=true
 ignore=false
 dump=false
@@ -73,7 +73,7 @@ if [ "$ignore" = false ] && ([ "${cpus}" -lt 16 ] || [ "${memory}" -lt 64000000 
 	exit 1
 fi
 
-echo -e "${COLOR}[2/5]${ENDC} Checking for required TON components"
+echo -e "${COLOR}[2/5]${ENDC} Checking for required ION components"
 SOURCES_DIR=/usr/src
 BIN_DIR=/usr/bin
 
@@ -85,24 +85,24 @@ if [[ "$OSTYPE" =~ darwin.* ]]; then
 fi
 
 # check TON components
-file1=${BIN_DIR}/ton/crypto/fift
-file2=${BIN_DIR}/ton/lite-client/lite-client
-file3=${BIN_DIR}/ton/validator-engine-console/validator-engine-console
+file1=${BIN_DIR}/ion/crypto/fift
+file2=${BIN_DIR}/ion/lite-client/lite-client
+file3=${BIN_DIR}/ion/validator-engine-console/validator-engine-console
 
 if  [ ! -f "${file1}" ] || [ ! -f "${file2}" ] || [ ! -f "${file3}" ]; then
-	echo "TON does not exists, building"
-	wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/ton_installer.sh -O /tmp/ton_installer.sh
-	bash /tmp/ton_installer.sh -c ${config}
+	echo "ION does not exists, building"
+	wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/ion_installer.sh -O /tmp/ion_installer.sh
+	bash /tmp/ion_installer.sh -c ${config}
 fi
 
 # Cloning mytonctrl
-echo -e "${COLOR}[3/5]${ENDC} Installing MyTonCtrl"
+echo -e "${COLOR}[3/5]${ENDC} Installing MyIonCtrl"
 echo "https://github.com/${author}/${repo}.git -> ${branch}"
 
 # remove previous installation
 cd $SOURCES_DIR
-rm -rf $SOURCES_DIR/mytonctrl
-pip3 uninstall -y mytonctrl
+rm -rf $SOURCES_DIR/myionctrl
+pip3 uninstall -y myionctrl
 
 git clone --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
 git config --global --add safe.directory $SOURCES_DIR/${repo}
@@ -110,7 +110,7 @@ cd $SOURCES_DIR/${repo}
 
 pip3 install -U .  # TODO: make installation from git directly
 
-echo -e "${COLOR}[4/5]${ENDC} Running mytoninstaller"
+echo -e "${COLOR}[4/5]${ENDC} Running myioninstaller"
 # DEBUG
 
 parent_name=$(ps -p $PPID -o comm=)
@@ -119,15 +119,15 @@ if [ "$parent_name" = "sudo" ] || [ "$parent_name" = "su" ]; then
     user=$(logname)
 fi
 echo "User: $user"
-python3 -m mytoninstaller -u ${user} -t ${telemetry} --dump ${dump} -m ${mode}
+python3 -m myioninstaller -u ${user} -t ${telemetry} --dump ${dump} -m ${mode}
 
 # set migrate version
 migrate_version=1
-version_dir="/home/${user}/.local/share/mytonctrl"
+version_dir="/home/${user}/.local/share/myionctrl"
 version_path="${version_dir}/VERSION"
 mkdir -p ${version_dir}
 echo ${migrate_version} > ${version_path}
 chown ${user}:${user} ${version_dir} ${version_path}
 
-echo -e "${COLOR}[5/5]${ENDC} Mytonctrl installation completed"
+echo -e "${COLOR}[5/5]${ENDC} Myionctrl installation completed"
 exit 0

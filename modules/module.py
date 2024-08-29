@@ -6,9 +6,9 @@ class MtcModule(ABC):
     description = ''  # module text description
     default_value = True  # is module enabled by default
 
-    def __init__(self, ton, local, *args, **kwargs):
-        from mytoncore.mytoncore import MyTonCore
-        self.ton: MyTonCore = ton
+    def __init__(self, ion, local, *args, **kwargs):
+        from myioncore.myioncore import MyTonCore
+        self.ion: MyTonCore = ion
         self.local = local
 
     @abstractmethod
