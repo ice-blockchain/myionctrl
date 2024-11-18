@@ -32,7 +32,7 @@ ENDC='\033[0m'
 apt-get install -y libsecp256k1-dev libsodium-dev ninja-build fio rocksdb-tools liblz4-dev libjemalloc-dev
 
 # bugfix if the files are in the wrong place
-wget "http://51.81.192.153/configs/global.config.json" -O global.config.json
+wget "https://cdn.ice.io/mainnet/global.config.json" -O global.config.json
 if [ -f "/var/ion-work/keys/liteserver.pub" ]; then
     echo "Ok"
 else

@@ -36,7 +36,7 @@ if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
 fi
 
 # node install parameters
-config="http://51.81.192.153/configs/global.config.json"
+config="https://cdn.ice.io/mainnet/global.config.json"
 telemetry=true
 ignore=false
 dump=false
