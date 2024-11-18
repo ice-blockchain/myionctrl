@@ -9,7 +9,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 # Get arguments
-config=http://94.100.16.219/configs/global.config.json
+config=http://51.81.192.153/configs/global.config.json
 while getopts c: flag
 do
 	case "${flag}" in

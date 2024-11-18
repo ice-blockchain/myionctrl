@@ -36,7 +36,7 @@ if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
 fi
 
 # node install parameters
-config="http://94.100.16.219/configs/global.config.json"
+config="http://51.81.192.153/configs/global.config.json"
 telemetry=true
 ignore=false
 dump=false
