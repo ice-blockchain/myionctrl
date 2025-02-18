@@ -4,7 +4,7 @@ import time
 
 from mypylib.mypylib import color_print, print_table
 
-from mytonctrl.utils import GetItemFromList
+from myionctrl.utils import GetItemFromList
 from modules.module import MtcModule
 
 
@@ -14,39 +14,39 @@ class ControllerModule(MtcModule):
     default_value = False
 
     def do_create_controllers(self):
-        new_controllers = self.ton.GetControllers()
-        old_controllers = self.ton.local.db.get("using_controllers", list())
+        new_controllers = self.ion.GetControllers()
+        old_controllers = self.ion.local.db.get("using_controllers", list())
         if new_controllers == old_controllers:
             return
 
-        self.ton.local.add_log("start CreateControllers function", "debug")
-        wallet = self.ton.GetValidatorWallet()
-        liquid_pool_addr = self.ton.GetLiquidPoolAddr()
-        contract_path = self.ton.contractsDir + "jetton_pool/"
+        self.ion.local.add_log("start CreateControllers function", "debug")
+        wallet = self.ion.GetValidatorWallet()
+        liquid_pool_addr = self.ion.GetLiquidPoolAddr()
+        contract_path = self.ion.contractsDir + "jetion_pool/"
         if not os.path.isdir(contract_path):
-            self.ton.DownloadContract("https://github.com/igroman787/jetton_pool")
+            self.ion.DownloadContract("https://github.com/igroman787/jetion_pool")
 
         file_name0 = contract_path + "fift-scripts/deploy_controller0.boc"
         file_name1 = contract_path + "fift-scripts/deploy_controller1.boc"
-        result_file_path0 = self.ton.SignBocWithWallet(wallet, file_name0, liquid_pool_addr, 1)
-        self.ton.SendFile(result_file_path0, wallet)
+        result_file_path0 = self.ion.SignBocWithWallet(wallet, file_name0, liquid_pool_addr, 1)
+        self.ion.SendFile(result_file_path0, wallet)
         time.sleep(10)
-        result_file_path1 = self.ton.SignBocWithWallet(wallet, file_name1, liquid_pool_addr, 1)
-        self.ton.SendFile(result_file_path1, wallet)
+        result_file_path1 = self.ion.SignBocWithWallet(wallet, file_name1, liquid_pool_addr, 1)
+        self.ion.SendFile(result_file_path1, wallet)
 
-        self.ton.local.db["old_controllers"] = old_controllers
-        self.ton.local.db["using_controllers"] = new_controllers
-        self.ton.local.save()
+        self.ion.local.db["old_controllers"] = old_controllers
+        self.ion.local.db["using_controllers"] = new_controllers
+        self.ion.local.save()
 
     def create_controllers(self, args):
         self.do_create_controllers()
         color_print("CreateControllers - {green}OK{endc}")
 
     def print_controllers_list(self, args):
-        new_controllers = self.ton.GetControllers()
-        using_controllers = self.ton.GetSettings("using_controllers")
-        old_controllers = self.ton.GetSettings("old_controllers")
-        user_controllers_list = self.ton.GetSettings("user_controllers_list")
+        new_controllers = self.ion.GetControllers()
+        using_controllers = self.ion.GetSettings("using_controllers")
+        old_controllers = self.ion.GetSettings("old_controllers")
+        user_controllers_list = self.ion.GetSettings("user_controllers_list")
         print("using controllers:")
         if using_controllers is not None:
             self.print_controllers_list_process(using_controllers)
@@ -67,8 +67,8 @@ class ControllerModule(MtcModule):
         table = list()
         table += [["Address", "Status", "Balance", "Approved", "State"]]
         for controllerAddr in controllers:
-            account = self.ton.GetAccount(controllerAddr)
-            controllerData = self.ton.GetControllerData(controllerAddr)
+            account = self.ion.GetAccount(controllerAddr)
+            controllerData = self.ion.GetControllerData(controllerAddr)
             approved = True if controllerData and controllerData["approved"] == -1 else False
             state = controllerData["state"] if controllerData else None
             table += [[controllerAddr, account.status, account.balance, approved, state]]
@@ -80,15 +80,15 @@ class ControllerModule(MtcModule):
         except:
             color_print("{red}Bad args. Usage:{endc} get_controller_data <controller-addr>")
             return
-        controller_data = self.ton.GetControllerData(controller_addr)
+        controller_data = self.ion.GetControllerData(controller_addr)
         print(json.dumps(controller_data, indent=4))
 
     def do_deposit_to_controller(self, controller_addr, amount):
-        self.ton.local.add_log("start DepositToController function", "debug")
-        wallet = self.ton.GetValidatorWallet()
-        file_name = self.ton.contractsDir + "jetton_pool/fift-scripts/top-up.boc"
-        result_file_path = self.ton.SignBocWithWallet(wallet, file_name, controller_addr, amount)
-        self.ton.SendFile(result_file_path, wallet)
+        self.ion.local.add_log("start DepositToController function", "debug")
+        wallet = self.ion.GetValidatorWallet()
+        file_name = self.ion.contractsDir + "jetion_pool/fift-scripts/top-up.boc"
+        result_file_path = self.ion.SignBocWithWallet(wallet, file_name, controller_addr, amount)
+        self.ion.SendFile(result_file_path, wallet)
 
     def deposit_to_controller(self, args):
         try:
@@ -106,14 +106,14 @@ class ControllerModule(MtcModule):
         except:
             color_print("{red}Bad args. Usage:{endc} withdraw_from_controller <controller-addr> [amount]")
             return
-        self.ton.WithdrawFromController(controller_addr, amount)
+        self.ion.WithdrawFromController(controller_addr, amount)
 
     def calculate_annual_controller_percentage(self, args):
         try:
             percent_per_round = float(args[0])
         except:
-            percent_per_round = self.ton.GetSettings("max_interest_percent")
-        config15 = self.ton.GetConfig(15)
+            percent_per_round = self.ion.GetSettings("max_interest_percent")
+        config15 = self.ion.GetConfig(15)
         roundPeriod = config15["validators_elected_for"]
         rounds = 365 * 24 * 3600 / roundPeriod
         yearInterest = (1 + percent_per_round / 100) * rounds
@@ -130,21 +130,21 @@ class ControllerModule(MtcModule):
         except:
             color_print("{red}Bad args. Usage:{endc} controller_update_validator_set <controller-addr>")
             return
-        self.ton.ControllerUpdateValidatorSet(controller_addr)
+        self.ion.ControllerUpdateValidatorSet(controller_addr)
         color_print("ControllerUpdateValidatorSet - {green}OK{endc}")
 
     def do_stop_controller(self, controller_addr):
-        stop_controllers_list = self.ton.local.db.get("stop_controllers_list")
+        stop_controllers_list = self.ion.local.db.get("stop_controllers_list")
         if stop_controllers_list is None:
             stop_controllers_list = list()
         if controller_addr not in stop_controllers_list:
             stop_controllers_list.append(controller_addr)
-        self.ton.local.db["stop_controllers_list"] = stop_controllers_list
+        self.ion.local.db["stop_controllers_list"] = stop_controllers_list
 
-        user_controllers = self.ton.local.db.get("user_controllers")
+        user_controllers = self.ion.local.db.get("user_controllers")
         if user_controllers is not None and controller_addr in user_controllers:
             user_controllers.remove(controller_addr)
-        self.ton.local.save()
+        self.ion.local.save()
 
     def stop_controller(self, args):
         try:
@@ -163,24 +163,24 @@ class ControllerModule(MtcModule):
             color_print("{red}Bad args. Usage:{endc} stop_and_withdraw_controller <controller-addr> [amount]")
             return
         if amount is None:
-            account = self.ton.GetAccount(controller_addr)
+            account = self.ion.GetAccount(controller_addr)
             amount = account.balance - 10.1
         self.do_stop_controller(controller_addr)
-        self.ton.WithdrawFromController(controller_addr, amount)
+        self.ion.WithdrawFromController(controller_addr, amount)
         color_print("StopAndWithdrawController - {green}OK{endc}")
 
     def do_add_controller(self, controller_addr):
-        user_controllers = self.ton.local.db.get("user_controllers")
+        user_controllers = self.ion.local.db.get("user_controllers")
         if user_controllers is None:
             user_controllers = list()
         if controller_addr not in user_controllers:
             user_controllers.append(controller_addr)
-        self.ton.local.db["user_controllers"] = user_controllers
+        self.ion.local.db["user_controllers"] = user_controllers
 
-        stop_controllers_list = self.ton.local.db.get("stop_controllers_list")
+        stop_controllers_list = self.ion.local.db.get("stop_controllers_list")
         if stop_controllers_list is not None and controller_addr in stop_controllers_list:
             stop_controllers_list.remove(controller_addr)
-        self.ton.local.save()
+        self.ion.local.save()
 
     def add_controller(self, args):
         try:
@@ -192,9 +192,9 @@ class ControllerModule(MtcModule):
         color_print("AddController - {green}OK{endc}")
 
     def do_check_liquid_pool(self):
-        liquid_pool_addr = self.ton.GetLiquidPoolAddr()
-        account = self.ton.GetAccount(liquid_pool_addr)
-        history = self.ton.GetAccountHistory(account, 5000)
+        liquid_pool_addr = self.ion.GetLiquidPoolAddr()
+        account = self.ion.GetAccount(liquid_pool_addr)
+        history = self.ion.GetAccountHistory(account, 5000)
         addrs_list = list()
         for message in history:
             if message.srcAddr is None or message.value is None:
@@ -205,28 +205,28 @@ class ControllerModule(MtcModule):
                 fromto = dest_add_full
             else:
                 fromto = src_addr_full
-            fromto = self.ton.AddrFull2AddrB64(fromto)
+            fromto = self.ion.AddrFull2AddrB64(fromto)
             if fromto not in addrs_list:
                 addrs_list.append(fromto)
 
         for controllerAddr in addrs_list:
-            account = self.ton.GetAccount(controllerAddr)
-            version = self.ton.GetVersionFromCodeHash(account.codeHash)
+            account = self.ion.GetAccount(controllerAddr)
+            version = self.ion.GetVersionFromCodeHash(account.codeHash)
             if version is None or "controller" not in version:
                 continue
             print(f"check controller: {controllerAddr}")
-            self.ton.ControllerUpdateValidatorSet(controllerAddr)
+            self.ion.ControllerUpdateValidatorSet(controllerAddr)
 
     def check_liquid_pool(self, args):
         self.do_check_liquid_pool()
         color_print("CheckLiquidPool - {green}OK{endc}")
 
     def do_calculate_loan_amount_test(self):
-        min_loan = self.ton.local.db.get("min_loan", 41000)
-        max_loan = self.ton.local.db.get("max_loan", 43000)
-        max_interest_percent = self.ton.local.db.get("max_interest_percent", 1.5)
+        min_loan = self.ion.local.db.get("min_loan", 41000)
+        max_loan = self.ion.local.db.get("max_loan", 43000)
+        max_interest_percent = self.ion.local.db.get("max_interest_percent", 1.5)
         max_interest = int(max_interest_percent / 100 * 16777216)
-        return self.ton.CalculateLoanAmount(min_loan, max_loan, max_interest)
+        return self.ion.CalculateLoanAmount(min_loan, max_loan, max_interest)
 
     def calculate_loan_amount_test(self, args):
         t = self.do_calculate_loan_amount_test()

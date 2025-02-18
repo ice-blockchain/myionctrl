@@ -34,11 +34,11 @@ class PrometheusModule(MtcModule):
     description = 'Prometheus format data exporter'
     default_value = False
 
-    def __init__(self, ton, local, *args, **kwargs):
-        super().__init__(ton, local, *args, **kwargs)
+    def __init__(self, ion, local, *args, **kwargs):
+        super().__init__(ion, local, *args, **kwargs)
 
     def get_validator_status_metrics(self, result: list):
-        status = self.ton.GetValidatorStatus()
+        status = self.ion.GetValidatorStatus()
         is_working = status.is_working or (status.unixtime is not None)
         if status.masterchain_out_of_sync is not None:
             result.append(METRICS['master_out_of_sync'].to_format(status.masterchain_out_of_sync))
@@ -56,22 +56,22 @@ class PrometheusModule(MtcModule):
         result.append(METRICS['vc_up'].to_format(int(is_working)))
 
     def get_validator_validation_metrics(self, result: list):
-        index = self.ton.GetValidatorIndex()
+        index = self.ion.GetValidatorIndex()
         result.append(METRICS['validator_id'].to_format(index))
-        config = self.ton.GetConfig34()
-        save_elections = self.ton.GetSaveElections()
+        config = self.ion.GetConfig34()
+        save_elections = self.ion.GetSaveElections()
         elections = save_elections.get(str(config["startWorkTime"]))
         if elections is not None:
-            adnl = self.ton.GetAdnlAddr()
+            adnl = self.ion.GetAdnlAddr()
             stake = elections.get(adnl, {}).get('stake')
             if stake:
                 result.append(METRICS['stake'].to_format(round(stake, 2)))
 
     def push_metrics(self):
-        if not self.ton.using_prometheus():
+        if not self.ion.using_prometheus():
             return
 
-        url = self.ton.local.db.get('prometheus_url')
+        url = self.ion.local.db.get('prometheus_url')
         if url is None:
             raise Exception('Prometheus url is not set')
         metrics = []
