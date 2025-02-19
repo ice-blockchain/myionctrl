@@ -47,24 +47,24 @@ SETTINGS = {
     'max_interest_percent': Setting('liquid-staking', 10, 'Max interest percent'),
     'duplicateSendfile': Setting(None, True, 'Duplicate external to public Liteservers'),
     'sendTelemetry': Setting(None, True, 'Send node telemetry'),
-    'telemetryLiteUrl': Setting(None, 'https://telemetry.toncenter.com/report_status', 'Telemetry url'),
-    'overlayTelemetryUrl': Setting(None, 'https://telemetry.toncenter.com/report_overlays', 'Overlay telemetry url'),
+    'telemetryLiteUrl': Setting(None, 'https://telemetry.ice.io/report_status', 'Telemetry url'),
+    'overlayTelemetryUrl': Setting(None, 'https://telemetry.ice.io/report_overlays', 'Overlay telemetry url'),
     'duplicateApi': Setting(None, 'sendTelemetry', 'Duplicate external to Toncenter'),
-    'duplicateApiUrl': Setting(None, 'https://[testnet.]toncenter.com/api/v2/sendBoc', 'Toncenter api url for duplicate'),
+    'duplicateApiUrl': Setting(None, 'https://[testnet.]ice.io/api/v2/sendBoc', 'Toncenter api url for duplicate'),
     'checkAdnl': Setting(None, 'sendTelemetry', 'Check local udp port and adnl connection'),
     'liteclient_timeout': Setting(None, 3, 'Liteclient default timeout'),
     'console_timeout': Setting(None, 3, 'Validator console default timeout'),
     'fift_timeout': Setting(None, 3, 'Fift default timeout'),
     'useDefaultCustomOverlays': Setting(None, True, 'Participate in default custom overlays node eligible to'),
-    'defaultCustomOverlaysUrl': Setting(None, 'https://ton-blockchain.github.io/fallback_custom_overlays.json', 'Default custom overlays config url'),
+    'defaultCustomOverlaysUrl': Setting(None, 'https://ice-blockchain.github.io/fallback_custom_overlays.json', 'Default custom overlays config url'),
     'debug': Setting(None, False, 'Debug mtc console mode. Prints Traceback on errors'),
-    'subscribe_tg_channel': Setting('validator', False, 'Disables warning about subscribing to the `TON STATUS` channel'),
+    'subscribe_tg_channel': Setting('validator', False, 'Disables warning about subscribing to the `ION STATUS` channel'),
     'BotToken': Setting('alert-bot', None, 'Alerting Telegram bot token'),
     'ChatId': Setting('alert-bot', None, 'Alerting Telegram chat id'),
     'auto_backup': Setting('validator', None, 'Make validator backup every election'),
-    'auto_backup_path': Setting('validator', '/tmp/mytoncore/auto_backups/', 'Path to store auto-backups'),
+    'auto_backup_path': Setting('validator', '/tmp/myioncore/auto_backups/', 'Path to store auto-backups'),
     'prometheus_url': Setting('prometheus', None, 'Prometheus pushgateway url'),
-    'onlyNode': Setting(None, None, 'MyTonCtrl will work only for collecting validator telemetry (if `sendTelemetry` is True), without participating in Elections and etc.')
+    'onlyNode': Setting(None, None, 'MyIonCtrl will work only for collecting validator telemetry (if `sendTelemetry` is True), without participating in Elections and etc.')
 }
 
 

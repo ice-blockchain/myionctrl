@@ -7,7 +7,7 @@ def run_cli():
     questions = [
         inquirer.List(
             "mode",
-            message="Select installation mode (More on https://docs.ton.org/participate/nodes/node-types)",
+            message="Select installation mode (More on https://docs.ice.io/participate/nodes/node-types)",
             choices=["validator", "liteserver"],
         ),
         inquirer.List(

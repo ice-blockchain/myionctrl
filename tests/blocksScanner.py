@@ -2,7 +2,7 @@
 # -*- coding: utf_8 -*-
 
 from mypylib.mypylib import bcolors, Sleep, MyPyClass
-from mytoncore import MyTonCore, TonBlocksScanner
+from myioncore import MyTonCore, TonBlocksScanner
 
 def NewBlockReaction(block):
 	print(f"{bcolors.green} block: {bcolors.endc} {block}")
@@ -18,7 +18,7 @@ def NewMessageReaction(message):
 
 
 local = MyPyClass('./tests')
-ton = MyTonCore(local)
-scanner = TonBlocksScanner(ton, nbr=NewBlockReaction, ntr=NewTransReaction, nmr=NewMessageReaction)
+ion = MyTonCore(local)
+scanner = TonBlocksScanner(ion, nbr=NewBlockReaction, ntr=NewTransReaction, nmr=NewMessageReaction)
 scanner.Run()
 Sleep()

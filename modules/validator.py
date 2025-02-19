@@ -2,7 +2,7 @@ import time
 
 from mypylib.mypylib import color_print, get_timestamp
 from modules.module import MtcModule
-from mytonctrl.utils import timestamp2utcdatetime, GetColorInt
+from myionctrl.utils import timestamp2utcdatetime, GetColorInt
 
 
 class ValidatorModule(MtcModule):
@@ -17,12 +17,12 @@ class ValidatorModule(MtcModule):
             color_print("{red}Bad args. Usage:{endc} vo <offer-hash>")
             return
         for offerHash in args:
-            self.ton.VoteOffer(offerHash)
+            self.ion.VoteOffer(offerHash)
         color_print("VoteOffer - {green}OK{endc}")
 
     def vote_election_entry(self, args):
-        from mytoncore.functions import Elections
-        Elections(self.ton.local, self.ton)
+        from myioncore.functions import Elections
+        Elections(self.ion.local, self.ion)
         color_print("VoteElectionEntry - {green}OK{endc}")
 
     def vote_complaint(self, args):
@@ -32,11 +32,11 @@ class ValidatorModule(MtcModule):
         except:
             color_print("{red}Bad args. Usage:{endc} vc <election-id> <complaint-hash>")
             return
-        self.ton.VoteComplaint(election_id, complaint_hash)
+        self.ion.VoteComplaint(election_id, complaint_hash)
         color_print("VoteComplaint - {green}OK{endc}")
 
     def find_myself(self, validators: list) -> dict:
-        adnl_addr = self.ton.GetAdnlAddr()
+        adnl_addr = self.ion.GetAdnlAddr()
         for validator in validators:
             if validator.get("adnlAddr") == adnl_addr:
                 return validator
@@ -44,11 +44,11 @@ class ValidatorModule(MtcModule):
 
     def check_efficiency(self, args):
         self.local.add_log("start GetValidatorEfficiency function", "debug")
-        previous_validators = self.ton.GetValidatorsList(past=True)
-        validators = self.ton.GetValidatorsList()
+        previous_validators = self.ion.GetValidatorsList(past=True)
+        validators = self.ion.GetValidatorsList()
         validator = self.find_myself(previous_validators)
-        config32 = self.ton.GetConfig32()
-        config34 = self.ton.GetConfig34()
+        config32 = self.ion.GetConfig32()
+        config34 = self.ion.GetConfig34()
         color_print("{cyan}===[ Validator efficiency ]==={endc}")
         start_time = timestamp2utcdatetime(config32.startWorkTime)
         end_time = timestamp2utcdatetime(config32.endWorkTime)
@@ -92,13 +92,13 @@ class ValidatorModule(MtcModule):
     # end define
 
     def get_my_complaint(self):
-        config32 = self.ton.GetConfig32()
-        save_complaints = self.ton.GetSaveComplaints()
+        config32 = self.ion.GetConfig32()
+        save_complaints = self.ion.GetSaveComplaints()
         complaints = save_complaints.get(str(config32['startWorkTime']))
         if not complaints:
             return
         for c in complaints.values():
-            if c["adnl"] == self.ton.GetAdnlAddr() and c["isPassed"]:
+            if c["adnl"] == self.ion.GetAdnlAddr() and c["isPassed"]:
                 return c
     # end define
 

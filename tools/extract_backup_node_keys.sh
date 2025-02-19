@@ -1,6 +1,6 @@
 name="backup.tar.gz"
 dest="cleared_backup_$(hostname)_$(date +%s).tar.gz"
-ton_db=""
+ion_db=""
 tmp_dir="tmp/backup"
 user=$(logname)
 
@@ -11,7 +11,7 @@ do
 	case "${flag}" in
 		n) name=${OPTARG};;
     d) dest=${OPTARG};;
-    t) ton_db=${OPTARG};;
+    t) ion_db=${OPTARG};;
     *)
         echo "Flag -${flag} is not recognized. Aborting"
         exit 1 ;;
@@ -21,15 +21,15 @@ done
 rm -rf $tmp_dir
 mkdir tmp/backup -p
 
-if [ ! -z "$ton_db" ]; then
+if [ ! -z "$ion_db" ]; then
   mkdir ${tmp_dir}/db
-  cp -r "$ton_db"/db/keyring ${tmp_dir}/db
-  cp "$ton_db"/db/config.json ${tmp_dir}/db
+  cp -r "$ion_db"/db/keyring ${tmp_dir}/db
+  cp "$ion_db"/db/config.json ${tmp_dir}/db
 else
   tar -xzf $name -C $tmp_dir
 fi
 
-rm -rf ${tmp_dir}/mytoncore
+rm -rf ${tmp_dir}/myioncore
 rm -rf ${tmp_dir}/keys
 mv ${tmp_dir}/db/keyring ${tmp_dir}/db/old_keyring
 mkdir ${tmp_dir}/db/keyring
