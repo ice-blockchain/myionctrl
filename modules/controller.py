@@ -86,7 +86,7 @@ class ControllerModule(MtcModule):
     def do_deposit_to_controller(self, controller_addr, amount):
         self.ion.local.add_log("start DepositToController function", "debug")
         wallet = self.ion.GetValidatorWallet()
-        file_name = self.ion.contractsDir + "jetion_pool/fift-scripts/top-up.boc"
+        file_name = self.ion.contractsDir + "jetton_pool/fift-scripts/top-up.boc"
         result_file_path = self.ion.SignBocWithWallet(wallet, file_name, controller_addr, amount)
         self.ion.SendFile(result_file_path, wallet)
 

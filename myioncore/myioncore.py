@@ -3618,7 +3618,7 @@ class MyTonCore():
 		#end if
 
 		wallet = self.GetValidatorWallet()
-		fiftScript = self.contractsDir + "jetion_pool/fift-scripts/generate-loan-request.fif"
+		fiftScript = self.contractsDir + "jetton_pool/fift-scripts/generate-loan-request.fif"
 		resultFilePath = self.tempDir + self.nodeName + wallet.name + "_loan_request.boc"
 		args = [fiftScript, min_loan, max_loan, max_interest, resultFilePath]
 		result = self.fift.Run(args)
@@ -3661,7 +3661,7 @@ class MyTonCore():
 	def ReturnUnusedLoan(self, controllerAddr):
 		self.local.add_log("start ReturnUnusedLoan function", "debug")
 		wallet = self.GetValidatorWallet()
-		fileName = self.contractsDir + "jetion_pool/fift-scripts/return_unused_loan.boc"
+		fileName = self.contractsDir + "jetton_pool/fift-scripts/return_unused_loan.boc"
 		resultFilePath = self.SignBocWithWallet(wallet, fileName, controllerAddr, 1.05)
 		self.SendFile(resultFilePath, wallet)
 	#end define
@@ -3684,7 +3684,7 @@ class MyTonCore():
 
 		self.local.add_log("start WithdrawFromControllerProcess function", "debug")
 		wallet = self.GetValidatorWallet()
-		fiftScript = self.contractsDir + "jetion_pool/fift-scripts/withdraw-controller.fif"
+		fiftScript = self.contractsDir + "jetton_pool/fift-scripts/withdraw-controller.fif"
 		resultFilePath = self.tempDir + self.nodeName + wallet.name + "_withdraw_request.boc"
 		args = [fiftScript, amount, resultFilePath]
 		result = self.fift.Run(args)
@@ -3717,7 +3717,7 @@ class MyTonCore():
 	def SignElectionRequestWithController(self, controllerAddr, startWorkTime, adnlAddr, validatorPubkey_b64, validatorSignature, maxFactor, stake):
 		self.local.add_log("start SignElectionRequestWithController function", "debug")
 		fileName = self.tempDir + str(startWorkTime) + "_validator-query.boc"
-		fiftScript = self.contractsDir + "jetion_pool/fift-scripts/controller-elect-signed.fif"
+		fiftScript = self.contractsDir + "jetton_pool/fift-scripts/controller-elect-signed.fif"
 		args = [fiftScript, controllerAddr, startWorkTime, maxFactor, adnlAddr, validatorPubkey_b64, validatorSignature, fileName, stake]
 		self.local.add_log(f"SignElectionRequestWithController args: {args}", "debug")
 		result = self.fift.Run(args)
@@ -3773,7 +3773,7 @@ class MyTonCore():
 
 	def ControllerUpdateValidatorSetProcess(self, controllerAddr, wallet):
 		self.local.add_log("start ControllerUpdateValidatorSetProcess function", "debug")
-		fileName = self.contractsDir + "jetion_pool/fift-scripts/update_validator_hash.boc"
+		fileName = self.contractsDir + "jetton_pool/fift-scripts/update_validator_hash.boc"
 		resultFilePath = self.SignBocWithWallet(wallet, fileName, controllerAddr, 1.07)
 		self.SendFile(resultFilePath, wallet)
 		self.local.add_log("ControllerUpdateValidatorSetProcess completed")
@@ -3782,7 +3782,7 @@ class MyTonCore():
 	def ControllerRecoverStake(self, controllerAddr):
 		wallet = self.GetValidatorWallet()
 		self.local.add_log("start ControllerRecoverStake function", "debug")
-		fileName = self.contractsDir + "jetion_pool/fift-scripts/recover_stake.boc"
+		fileName = self.contractsDir + "jetton_pool/fift-scripts/recover_stake.boc"
 		resultFilePath = self.SignBocWithWallet(wallet, fileName, controllerAddr, 1.04)
 		self.SendFile(resultFilePath, wallet)
 		self.local.add_log("ControllerRecoverStake completed")
