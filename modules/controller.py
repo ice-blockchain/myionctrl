@@ -22,9 +22,9 @@ class ControllerModule(MtcModule):
         self.ion.local.add_log("start CreateControllers function", "debug")
         wallet = self.ion.GetValidatorWallet()
         liquid_pool_addr = self.ion.GetLiquidPoolAddr()
-        contract_path = self.ion.contractsDir + "jetion_pool/"
+        contract_path = self.ion.contractsDir + "jetton_pool/"
         if not os.path.isdir(contract_path):
-            self.ion.DownloadContract("https://github.com/igroman787/jetion_pool")
+            self.ion.DownloadContract("https://github.com/igroman787/jetton_pool")
 
         file_name0 = contract_path + "fift-scripts/deploy_controller0.boc"
         file_name1 = contract_path + "fift-scripts/deploy_controller1.boc"
