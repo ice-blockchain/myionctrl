@@ -28,10 +28,10 @@ class ControllerModule(MtcModule):
 
         file_name0 = contract_path + "fift-scripts/deploy_controller0.boc"
         file_name1 = contract_path + "fift-scripts/deploy_controller1.boc"
-        result_file_path0 = self.ion.SignBocWithWallet(wallet, file_name0, liquid_pool_addr, 1)
+        result_file_path0 = self.ion.SignBocWithWallet(wallet, file_name0, liquid_pool_addr, 4)
         self.ion.SendFile(result_file_path0, wallet)
         time.sleep(10)
-        result_file_path1 = self.ion.SignBocWithWallet(wallet, file_name1, liquid_pool_addr, 1)
+        result_file_path1 = self.ion.SignBocWithWallet(wallet, file_name1, liquid_pool_addr, 4)
         self.ion.SendFile(result_file_path1, wallet)
 
         self.ion.local.db["old_controllers"] = old_controllers
