@@ -488,6 +488,7 @@ def EnableJsonRpc(local):
 def enable_ion_http_api(local):
 	local.add_log("start EnableTonHttpApi function", "debug")
 	if not os.path.exists('/usr/bin/ion/local.config.json'):
+		local.add_log("start EnableTonHttpApi function path", "debug")
 		from myioninstaller.myioninstaller import CreateLocalConfigFile
 		CreateLocalConfigFile(local, [])
 	local.add_log("start EnableTonHttpApi function 1", "debug")
