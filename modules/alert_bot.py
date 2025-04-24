@@ -241,6 +241,7 @@ Alert text:
             self.send_alert("db_usage_80")
 
     def check_validator_wallet_balance(self):
+        self.local.add_log("check_validator_wallet", "debug")
         if not self.ion.using_validator():
             return
         validator_status = self.ion.GetValidatorStatus()
@@ -267,11 +268,13 @@ Alert text:
             self.send_alert("low_efficiency", efficiency=validator.efficiency)
 
     def check_validator_working(self):
+        self.local.add_log("check_validator_working", "debug")
         validator_status = self.ion.GetValidatorStatus()
         if not validator_status.is_working:
             self.send_alert("service_down")
 
     def check_sync(self):
+        self.local.add_log("check_sync", "debug")
         validator_status = self.ion.GetValidatorStatus()
         if validator_status.is_working and validator_status.out_of_sync >= 20:
             self.send_alert("out_of_sync", sync=validator_status.out_of_sync)

@@ -38,6 +38,7 @@ class PrometheusModule(MtcModule):
         super().__init__(ion, local, *args, **kwargs)
 
     def get_validator_status_metrics(self, result: list):
+        self.local.add_log("validator status metrics, prometheus", "debug")
         status = self.ion.GetValidatorStatus()
         is_working = status.is_working or (status.unixtime is not None)
         if status.masterchain_out_of_sync is not None:
