@@ -193,8 +193,11 @@ def PrintLiteServerConfig(local, args):
 
 
 def CreateLocalConfigFile(local, args):
+	local.add_log("Create Config file", "debug")
 	initBlock = GetInitBlock()
+	local.add_log("init block taken", "debug")
 	initBlock_b64 = dict2b64(initBlock)
+	local.add_log("initBlock_b64", "debug")
 	args = ["python3", "-m", "myioninstaller", "-u", local.buffer.user, "-e", "clc", "-i", initBlock_b64]
 	run_as_root(args)
 #end define
