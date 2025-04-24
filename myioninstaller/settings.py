@@ -490,12 +490,15 @@ def enable_ion_http_api(local):
 	if not os.path.exists('/usr/bin/ion/local.config.json'):
 		from myioninstaller.myioninstaller import CreateLocalConfigFile
 		CreateLocalConfigFile(local, [])
+	local.add_log("start EnableTonHttpApi function 1", "debug")
 	ion_http_api_installer_path = pkg_resources.resource_filename('myioninstaller.scripts', 'ion_http_api_installer.sh')
 	exit_code = run_as_root(["bash", ion_http_api_installer_path])
+	local.add_log("start EnableTonHttpApi function 2", "debug")
 	if exit_code == 0:
 		text = "EnableTonHttpApi - {green}OK{endc}"
 	else:
 		text = "EnableTonHttpApi - {red}Error{endc}"
+	local.add_log("start EnableTonHttpApi function 3", "debug")	
 	color_print(text)
 #end define
 
