@@ -94,6 +94,7 @@ def enable_ion_storage_provider_event(local):
 
 
 def enable_mode(local, event_name):
+    local.add_log(f"enable_mode {event_name}", "error")
     ion = MyTonCore(local)
     mode = event_name.split("_")[-1]
     if mode == "liteserver":

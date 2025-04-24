@@ -777,12 +777,14 @@ class MyTonCore():
 		try:
 			# Parse
 			status.is_working = True
+			self.local.add_log("s1", "debug")
 			result = self.validatorConsole.Run("getstats")
 			status.result_stats = result
 			status.unixtime = int(parse(result, "unixtime", '\n'))
 			status.masterchainblocktime = int(parse(result, "masterchainblocktime", '\n'))
 			status.stateserializermasterchainseqno = int(parse(result, "stateserializermasterchainseqno", '\n'))
 			status.shardclientmasterchainseqno = int(parse(result, "shardclientmasterchainseqno", '\n'))
+			self.local.add_log("s2", "debug")
 			buff = parse(result, "masterchainblock", '\n')
 			status.masterchainblock = self.GVS_GetItemFromBuff(buff)
 			buff = parse(result, "gcmasterchainblock", '\n')
@@ -792,11 +794,13 @@ class MyTonCore():
 			buff = parse(result, "rotatemasterchainblock", '\n')
 			status.rotatemasterchainblock = self.GVS_GetItemFromBuff(buff)
 			# Calculate
+			self.local.add_log("s3", "debug")
 			status.masterchain_out_of_sync = status.unixtime - status.masterchainblocktime
 			status.shardchain_out_of_sync = status.masterchainblock - status.shardclientmasterchainseqno
 			status.masterchain_out_of_ser = status.masterchainblock - status.stateserializermasterchainseqno
 			status.out_of_sync = status.masterchain_out_of_sync if status.masterchain_out_of_sync > status.shardchain_out_of_sync else status.shardchain_out_of_sync
 			status.out_of_ser = status.masterchain_out_of_ser
+			self.local.add_log("s4", "debug")
 			status.last_deleted_mc_state = int(parse(result, "last_deleted_mc_state", '\n'))
 		except Exception as ex:
 			self.local.add_log(f"GetValidatorStatus warning: {ex}", "warning")
@@ -3080,10 +3084,12 @@ class MyTonCore():
 				raise Exception(f'Cannot enable validator mode while liteserver mode is enabled. '
 								f'Use `disable_mode liteserver` first.')
 		if name == 'liquid-staking':
+			self.local.add_log("start staking function mytoncore", "error")
 			from myioninstaller.settings import enable_ion_http_api
 			enable_ion_http_api(self.local)
 
 	def enable_mode(self, name):
+		self.local.add_log("start enable_mode function mytoncore", "error")
 		if name not in MODES:
 			raise Exception(f'Unknown module name: {name}. Available modes: {", ".join(MODES)}')
 		self.check_enable_mode(name)
