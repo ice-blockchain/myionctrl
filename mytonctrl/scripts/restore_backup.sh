@@ -1,7 +1,7 @@
 name="backup.tar.gz"
 mtc_dir="$HOME/.local/share/mytoncore"
 ip=0
-user=$(logname)
+user=${SUDO_USER:-$(logname)}
 # Get arguments
 while getopts n:m:i:u: flag
 do

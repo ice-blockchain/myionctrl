@@ -1,16 +1,17 @@
 dest="mytonctrl_backup_$(hostname)_$(date +%s).tar.gz"
 mtc_dir="$HOME/.local/share/mytoncore"
-user=$(logname)
+user=${SUDO_USER:-$(logname)}
 ton_dir="/var/ton-work"
 keys_dir="/var/ton-work/keys"
 # Get arguments
-while getopts d:m:t:k: flag
+while getopts d:m:t:k:u: flag
 do
 	case "${flag}" in
 		d) dest=${OPTARG};;
     m) mtc_dir=${OPTARG};;
     t) ton_dir=${OPTARG};;
     k) keys_dir=${OPTARG};;
+    u) user=${OPTARG};;
     *)
         echo "Flag -${flag} is not recognized. Aborting"
         exit 1 ;;

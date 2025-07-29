@@ -22,6 +22,7 @@ from mypylib.mypylib import (
 	ip2int,
 	Dict, int2ip
 )
+from mytonctrl.utils import get_current_user
 from mytoninstaller.utils import StartValidator, StartMytoncore, start_service, stop_service, get_ed25519_pubkey, \
 	disable_service, is_testnet, get_block_from_toncenter
 from mytoninstaller.config import SetConfig, GetConfig, get_own_ip, backup_config
@@ -729,8 +730,9 @@ def do_enable_ton_http_api(local):
 	if not os.path.exists('/usr/bin/ton/local.config.json'):
 		from mytoninstaller.mytoninstaller import CreateLocalConfigFile
 		CreateLocalConfigFile(local, [])
+	user = local.buffer.user or get_current_user()
 	ton_http_api_installer_path = pkg_resources.resource_filename('mytoninstaller.scripts', 'ton_http_api_installer.sh')
-	exit_code = run_as_root(["bash", ton_http_api_installer_path])
+	exit_code = run_as_root(["bash", ton_http_api_installer_path, "-u", user])
 	if exit_code == 0:
 		text = "do_enable_ton_http_api - {green}OK{endc}"
 	else:

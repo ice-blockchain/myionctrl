@@ -1,3 +1,5 @@
+import os
+import pwd
 import subprocess
 import time
 
@@ -57,3 +59,6 @@ def GetColorInt(data, border, logic, ending=None):
             result = bcolors.red_text(data, ending)
     return result
 # end define
+
+def get_current_user():
+    return pwd.getpwuid(os.getuid()).pw_name
