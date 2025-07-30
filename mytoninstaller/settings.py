@@ -1134,10 +1134,10 @@ def ConfigureFromBackup(local):
 	os.makedirs(local.buffer.ton_work_dir, exist_ok=True)
 	if not local.buffer.only_mtc:
 		ip = str(ip2int(get_own_ip()))
-		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file, "-i", ip])
+		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file, "-i", ip], user=local.buffer.user)
 
 	if local.buffer.only_mtc:
-		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file])
+		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file], user=local.buffer.user)
 		local.add_log("Installing only mtc", "info")
 		vconfig_path = local.buffer.vconfig_path
 		vconfig = GetConfig(path=vconfig_path)
@@ -1161,7 +1161,7 @@ def ConfigureOnlyNode(local):
 	mconfig_dir = get_dir_from_path(mconfig_path)
 	local.add_log("start ConfigureOnlyNode function", "info")
 
-	process = BackupModule.run_create_backup(["-m", mconfig_dir, ])
+	process = BackupModule.run_create_backup(["-m", mconfig_dir], user=local.buffer.user)
 	if process.returncode != 0:
 		local.add_log("Backup creation failed", "error")
 		return
