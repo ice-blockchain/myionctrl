@@ -2,16 +2,17 @@ name="backup.tar.gz"
 dest="cleared_backup_$(hostname)_$(date +%s).tar.gz"
 ton_db=""
 tmp_dir="tmp/backup"
-user=$(logname)
+user=${SUDO_USER:-$(logname)}
 
 
 # Get arguments
-while getopts n:d:t: flag
+while getopts n:d:t:u: flag
 do
 	case "${flag}" in
 		n) name=${OPTARG};;
     d) dest=${OPTARG};;
     t) ton_db=${OPTARG};;
+    u) user=${OPTARG};;
     *)
         echo "Flag -${flag} is not recognized. Aborting"
         exit 1 ;;

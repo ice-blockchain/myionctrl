@@ -11,6 +11,7 @@ import pkg_resources
 
 from mypylib.mypylib import MyPyClass, run_as_root, color_print
 from mypyconsole.mypyconsole import MyPyConsole
+from mytonctrl.utils import get_current_user, pop_user_from_args
 
 from mytoninstaller.config import GetLiteServerConfig, get_ls_proxy_config
 from mytoninstaller.node_args import get_node_args
@@ -48,8 +49,7 @@ def Init(local, console):
 
 
 	# create variables
-	user = os.environ.get("USER", "root")
-	local.buffer.user = user
+	local.buffer.user = get_current_user()
 	local.buffer.vuser = "validator"
 	local.buffer.cport = random.randint(2000, 65000)
 	local.buffer.lport = random.randint(2000, 65000)
@@ -207,7 +207,9 @@ def CreateLocalConfigFile(local, args):
 		init_block["rootHash"] = b642hex(config_init_block['root_hash'])
 		init_block["fileHash"] = b642hex(config_init_block['file_hash'])
 	init_block_b64 = dict2b64(init_block)
-	user = local.buffer.user or os.environ.get("USER", "root")
+	user = pop_user_from_args(args)
+	if user is None:
+		user = local.buffer.user or get_current_user()
 	args = ["python3", "-m", "mytoninstaller", "-u", user, "-e", "clc", "-i", init_block_b64]
 	run_as_root(args)
 #end define

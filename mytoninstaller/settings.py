@@ -22,6 +22,7 @@ from mypylib.mypylib import (
 	ip2int,
 	Dict, int2ip
 )
+from mytonctrl.utils import get_current_user
 from mytoninstaller.utils import StartValidator, StartMytoncore, start_service, stop_service, get_ed25519_pubkey, \
 	disable_service, is_testnet, get_block_from_toncenter
 from mytoninstaller.config import SetConfig, GetConfig, get_own_ip, backup_config
@@ -729,8 +730,9 @@ def do_enable_ton_http_api(local):
 	if not os.path.exists('/usr/bin/ton/local.config.json'):
 		from mytoninstaller.mytoninstaller import CreateLocalConfigFile
 		CreateLocalConfigFile(local, [])
+	user = local.buffer.user or get_current_user()
 	ton_http_api_installer_path = pkg_resources.resource_filename('mytoninstaller.scripts', 'ton_http_api_installer.sh')
-	exit_code = run_as_root(["bash", ton_http_api_installer_path])
+	exit_code = run_as_root(["bash", ton_http_api_installer_path, "-u", user])
 	if exit_code == 0:
 		text = "do_enable_ton_http_api - {green}OK{endc}"
 	else:
@@ -1132,10 +1134,10 @@ def ConfigureFromBackup(local):
 	os.makedirs(local.buffer.ton_work_dir, exist_ok=True)
 	if not local.buffer.only_mtc:
 		ip = str(ip2int(get_own_ip()))
-		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file, "-i", ip])
+		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file, "-i", ip], user=local.buffer.user)
 
 	if local.buffer.only_mtc:
-		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file])
+		BackupModule.run_restore_backup(["-m", mconfig_dir, "-n", backup_file], user=local.buffer.user)
 		local.add_log("Installing only mtc", "info")
 		vconfig_path = local.buffer.vconfig_path
 		vconfig = GetConfig(path=vconfig_path)
@@ -1159,7 +1161,7 @@ def ConfigureOnlyNode(local):
 	mconfig_dir = get_dir_from_path(mconfig_path)
 	local.add_log("start ConfigureOnlyNode function", "info")
 
-	process = BackupModule.run_create_backup(["-m", mconfig_dir, ])
+	process = BackupModule.run_create_backup(["-m", mconfig_dir], user=local.buffer.user)
 	if process.returncode != 0:
 		local.add_log("Backup creation failed", "error")
 		return

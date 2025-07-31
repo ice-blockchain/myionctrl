@@ -1,3 +1,5 @@
+import os
+import pwd
 import subprocess
 import time
 
@@ -57,3 +59,16 @@ def GetColorInt(data, border, logic, ending=None):
             result = bcolors.red_text(data, ending)
     return result
 # end define
+
+def get_current_user():
+    return pwd.getpwuid(os.getuid()).pw_name
+
+def pop_user_from_args(args: list):
+    if '-u' in args:
+        user_index = args.index('-u') + 1
+        if user_index >= len(args):
+            raise Exception(f'User value not found after "-u" in args: {args}')
+        user = args.pop(user_index)
+        args.pop(args.index('-u'))
+        return user
+    return None

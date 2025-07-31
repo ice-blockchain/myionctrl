@@ -45,7 +45,8 @@ from mytoncore.functions import (
 )
 from mytoncore.telemetry import is_host_virtual
 from mytonctrl.migrate import run_migrations
-from mytonctrl.utils import GetItemFromList, timestamp2utcdatetime, fix_git_config, is_hex, GetColorInt
+from mytonctrl.utils import GetItemFromList, timestamp2utcdatetime, fix_git_config, is_hex, GetColorInt, \
+	pop_user_from_args
 
 import sys, getopt, os
 
@@ -331,9 +332,12 @@ def Update(local, args):
 #end define
 
 def Upgrade(local, ton, args: list):
-	if '--btc-teleport' in args:  # upgrade --btc-teleport [branch]
-		branch = args[args.index('--btc-teleport') + 1] if len(args) > args.index('--btc-teleport') + 1 else 'master'
-		upgrade_btc_teleport(local, ton, reinstall=True, branch=branch)
+	if '--btc-teleport' in args:  # upgrade --btc-teleport [branch] [-u <user>]
+		branch = 'master'
+		user = pop_user_from_args(args)
+		if len(args) > args.index('--btc-teleport') + 1:
+			branch = args[args.index('--btc-teleport') + 1]
+		upgrade_btc_teleport(local, ton, reinstall=True, branch=branch, user=user)
 		return
 	repo = "ton"
 	author, repo, branch = check_git(args, repo, "upgrade")
@@ -378,10 +382,10 @@ def Upgrade(local, ton, args: list):
 #end define
 
 
-def upgrade_btc_teleport(local, ton, reinstall=False, branch: str = 'master'):
+def upgrade_btc_teleport(local, ton, reinstall=False, branch: str = 'master', user = None):
 	from modules.btc_teleport import BtcTeleportModule
 	module = BtcTeleportModule(ton, local)
-	local.try_function(module.init, args=[reinstall, branch])
+	local.try_function(module.init, args=[reinstall, branch, user])
 
 
 def get_clang_major_version():

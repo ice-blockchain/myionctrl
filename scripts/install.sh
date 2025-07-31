@@ -169,7 +169,7 @@ if [ "${user}" = "" ]; then  # no user
     parent_name=$(ps -p $PPID -o comm=)
     user=$(whoami)
     if [ "$parent_name" = "sudo" ] || [ "$parent_name" = "su" ] || [ "$parent_name" = "python3" ]; then
-        user=$(logname)
+        user=${SUDO_USER:-$(logname)}
     fi
 fi
 echo "User: $user"

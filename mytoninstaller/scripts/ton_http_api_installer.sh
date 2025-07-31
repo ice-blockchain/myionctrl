@@ -7,6 +7,16 @@ if [ "$(id -u)" != "0" ]; then
 	exit 1
 fi
 
+user=${SUDO_USER:-$(logname)}
+
+while getopts u: flag
+do
+	case "${flag}" in
+    u) user=${OPTARG};;
+    *) echo "Flag -${flag} is not recognized. Aborting"; exit 1 ;;
+	esac
+done
+
 # Цвета
 COLOR='\033[92m'
 ENDC='\033[0m'
@@ -21,7 +31,6 @@ virtualenv ${venv_path}
 
 # install python3 packages
 echo -e "${COLOR}[2/4]${ENDC} Installing required packages"
-user=$(logname)
 venv_pip3="${venv_path}/bin/pip3"
 ${venv_pip3} install ton-http-api
 chown -R ${user}:${user} ${venv_path}

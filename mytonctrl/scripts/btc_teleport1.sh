@@ -1,14 +1,15 @@
 REPO=""
 SRC_DIR=""
-USER=$(logname)
+USER=${SUDO_USER:-$(logname)}
 BRANCH=master
 
-while getopts s:r:b: flag
+while getopts s:r:b:u: flag
 do
 	case "${flag}" in
 		s) SRC_DIR=${OPTARG};;
     r) REPO=${OPTARG};;
     b) BRANCH=${OPTARG};;
+    u) USER=${OPTARG};;
     *) echo "Flag -${flag} is not recognized. Aborting"; exit 1 ;;
 	esac
 done

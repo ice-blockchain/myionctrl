@@ -6,6 +6,7 @@ import pkg_resources
 
 from modules.module import MtcModule
 from mypylib.mypylib import run_as_root, color_print, bcolors, print_table
+from mytonctrl.utils import get_current_user
 
 
 class BtcTeleportModule(MtcModule):
@@ -56,21 +57,24 @@ LOG_FILE=/var/log/btc_teleport/btc_teleport.log
         with open(env_path, 'w') as f:
             f.write(text)
 
-    def add_daemon(self):
+    def add_daemon(self, user: str = None):
         start = f'{self.bin_dir}/oracle'
         script_path = pkg_resources.resource_filename('mytoninstaller', 'scripts/add2systemd.sh')
-        user = os.environ.get("USER", "root")
+        if user is None:
+            user = get_current_user()
         run_as_root(['bash', script_path, '-n', 'btc_teleport', '-u', user, '-g', user, '-s', start, '-w', self.bin_dir])
 
-    def install(self, branch):
+    def install(self, branch: str, user: str = None):
         script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/btc_teleport1.sh')
-        exit_code = run_as_root(["bash", script_path, "-s", '/usr/src', "-r", self.repo_name, "-b", branch])
+        if user is None:
+            user = get_current_user()
+        exit_code = run_as_root(["bash", script_path, "-s", '/usr/src', "-r", self.repo_name, "-b", branch, "-u", user])
         if exit_code != 0:
             raise Exception('Failed to install btc_teleport')
         script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/btc_teleport2.sh')
         subprocess.run(["bash", script_path, "-s", self.src_dir])
 
-    def init(self, reinstall=False, branch: str = 'master'):
+    def init(self, reinstall=False, branch: str = 'master', user: str = None):
         if os.path.exists(self.src_dir) and not reinstall:
             return
         if self.ton.local.db.get('btcTeleportDisabled'):
@@ -78,9 +82,9 @@ LOG_FILE=/var/log/btc_teleport/btc_teleport.log
             return
         self.local.add_log('Installing btc_teleport', 'info')
         os.makedirs(self.keystore_path, mode=0o700, exist_ok=True)
-        self.install(branch)
+        self.install(branch, user=user)
         self.create_env_file()
-        self.add_daemon()
+        self.add_daemon(user=user)
         self.local.add_log('Installed btc_teleport', 'info')
 
     @staticmethod

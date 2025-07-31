@@ -7,6 +7,7 @@ import pkg_resources
 
 from modules.module import MtcModule
 from mypylib.mypylib import color_print, ip2int, run_as_root, parse, MyPyClass
+from mytonctrl.utils import get_current_user, pop_user_from_args
 from mytoninstaller.config import get_own_ip
 
 
@@ -28,19 +29,22 @@ class BackupModule(MtcModule):
         return dir_name
 
     @staticmethod
-    def run_create_backup(args):
+    def run_create_backup(args, user: str = None):
+        if user is None:
+            user = get_current_user()
         backup_script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/create_backup.sh')
-        return subprocess.run(["bash", backup_script_path] + args, timeout=5)
+        return subprocess.run(["bash", backup_script_path, "-u", user] + args, timeout=5)
 
     def create_backup(self, args):
-        if len(args) > 1:
-            color_print("{red}Bad args. Usage:{endc} create_backup [filename]")
+        if len(args) > 3:
+            color_print("{red}Bad args. Usage:{endc} create_backup [filename] [-u <user>]")
             return
         tmp_dir = self.create_tmp_ton_dir()
         command_args = ["-m", self.ton.local.buffer.my_work_dir, "-t", tmp_dir]
+        user = pop_user_from_args(args)
         if len(args) == 1:
             command_args += ["-d", args[0]]
-        process = self.run_create_backup(command_args)
+        process = self.run_create_backup(command_args, user=user)
 
         if process.returncode == 0:
             color_print("create_backup - {green}OK{endc}")
@@ -51,14 +55,17 @@ class BackupModule(MtcModule):
     # end define
 
     @staticmethod
-    def run_restore_backup(args):
+    def run_restore_backup(args, user: str = None):
+        if user is None:
+            user = get_current_user()
         restore_script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/restore_backup.sh')
-        return run_as_root(["bash", restore_script_path] + args)
+        return run_as_root(["bash", restore_script_path, "-u", user] + args)
 
     def restore_backup(self, args):
-        if len(args) == 0 or len(args) > 3:
-            color_print("{red}Bad args. Usage:{endc} restore_backup <filename> [-y] [--skip-create-backup]")
+        if len(args) == 0 or len(args) > 5:
+            color_print("{red}Bad args. Usage:{endc} restore_backup <filename> [-y] [--skip-create-backup] [-u <user>]")
             return
+        user = pop_user_from_args(args)
         if '-y' not in args:
             res = input(
                 f'This action will overwrite existing configuration with contents of backup archive, please make sure that donor node is not in operation prior to this action. Proceed [y/n]')
@@ -79,7 +86,7 @@ class BackupModule(MtcModule):
         ip = str(ip2int(get_own_ip()))
         command_args = ["-m", self.ton.local.buffer.my_work_dir, "-n", args[0], "-i", ip]
 
-        if self.run_restore_backup(command_args) == 0:
+        if self.run_restore_backup(command_args, user=user) == 0:
             self.ton.local.load_db()
             if self.ton.using_validator():
                 from modules.btc_teleport import BtcTeleportModule
