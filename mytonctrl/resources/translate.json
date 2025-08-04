@@ -259,6 +259,11 @@
 		"ru": "{cyan}===[ Статус ноды ]==={endc}",
 		"zh_TW": "{cyan}===[ 节点狀態 ]==={endc}"
 	},
+	"node_mode": {
+		"en": "Node mode: {{underline}}{0}{{endc}}",
+		"ru": "Режим ноды: {{underline}}{0}{{endc}}",
+		"zh_TW": "節點模式: {{underline}}{0}{{endc}}"
+	},
 	"node_ip_address": {
 		"en": "Node IP address: {{bold}}{0}{{endc}}",
 		"ru": "IP адрес Ноды: {{bold}}{0}{{endc}}",
@@ -558,6 +563,16 @@
 		"en": "Remove BTC Teleport Oracle",
 		"ru": "Удалить BTC Teleport Oracle",
 		"zh_TW": "刪除 BTC Teleport Oracle"
+	},
+	"setup_collator": {
+		"en": "Setup collator",
+		"ru": "Настроить коллатор",
+		"zh_TW": "設置協作者"
+	},
+	"print_local_collators": {
+		"en": "Print collators",
+		"ru": "Показать коллаторы",
+		"zh_TW": "顯示協作者"
 	},
 	"benchmark_cmd": {
 		"en": "Run benchmark",

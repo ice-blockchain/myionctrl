@@ -63,12 +63,15 @@ def GetColorInt(data, border, logic, ending=None):
 def get_current_user():
     return pwd.getpwuid(os.getuid()).pw_name
 
-def pop_user_from_args(args: list):
-    if '-u' in args:
-        user_index = args.index('-u') + 1
-        if user_index >= len(args):
-            raise Exception(f'User value not found after "-u" in args: {args}')
-        user = args.pop(user_index)
-        args.pop(args.index('-u'))
-        return user
+def pop_arg_from_args(args: list, arg_name: str):
+    if arg_name in args:
+        arg_index = args.index(arg_name) + 1
+        if arg_index >= len(args):
+            raise Exception(f'Value not found after "{arg_name}" in args: {args}')
+        value = args.pop(arg_index)
+        args.pop(args.index(arg_name))
+        return value
     return None
+
+def pop_user_from_args(args: list):
+    return pop_arg_from_args(args, '-u')

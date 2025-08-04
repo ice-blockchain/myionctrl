@@ -1,5 +1,6 @@
 import time
 
+from modules.btc_teleport import BtcTeleportModule
 from mypylib.mypylib import color_print, get_timestamp
 from modules.module import MtcModule
 from mytonctrl.utils import timestamp2utcdatetime, GetColorInt
@@ -105,7 +106,13 @@ class ValidatorModule(MtcModule):
         for c in complaints.values():
             if c["adnl"] == self.ton.GetAdnlAddr() and c["isPassed"]:
                 return c
-    # end define
+
+    @classmethod
+    def check_enable(cls, ton: "MyTonCore"):
+        if ton.using_liteserver():
+            raise Exception(f'Cannot enable validator mode while liteserver mode is enabled. '
+                            f'Use `disable_mode liteserver` first.')
+        BtcTeleportModule(ton, ton.local).init()
 
     def add_console_commands(self, console):
         console.AddItem("vo", self.vote_offer, self.local.translate("vo_cmd"))

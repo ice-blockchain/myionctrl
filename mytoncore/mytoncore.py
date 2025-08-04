@@ -3167,7 +3167,7 @@ class MyTonCore():
 	def enable_mode(self, name):
 		if name not in MODES:
 			raise Exception(f'Unknown module name: {name}. Available modes: {", ".join(MODES)}')
-		self.check_enable_mode(name)
+		MODES[name].check_enable(self)
 		current_modes = self.get_modes()
 		current_modes[name] = True
 		self.local.save()
@@ -3176,6 +3176,7 @@ class MyTonCore():
 		current_modes = self.get_modes()
 		if name not in current_modes:
 			raise Exception(f'Unknown module name: {name}. Available modes: {", ".join(MODES)}')
+		MODES[name](self, self.local).check_disable()
 		current_modes[name] = False
 		self.local.save()
 
@@ -3202,6 +3203,17 @@ class MyTonCore():
 
 	def using_liteserver(self):
 		return self.get_mode_value('liteserver')
+
+	def using_collator(self):
+		return self.get_mode_value('collator')
+
+	def get_node_mode(self):
+		if self.using_validator():
+			return 'VALIDATOR'
+		elif self.using_liteserver():
+			return 'LITESERVER'
+		elif self.using_collator():
+			return 'COLLATOR'
 
 	def using_alert_bot(self):
 		return self.get_mode_value('alert-bot')

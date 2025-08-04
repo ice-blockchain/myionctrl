@@ -8,5 +8,11 @@ class LiteserverModule(MtcModule):
     description = 'For liteserver usage only without validator.'
     default_value = False
 
+    @classmethod
+    def check_enable(cls, ton: "MyTonCore"):
+        if ton.using_validator():
+            raise Exception(f'Cannot enable liteserver mode while validator mode is enabled. '
+                            f'Use `disable_mode validator` first.')
+
     def add_console_commands(self, console):
         ...

@@ -1,0 +1,81 @@
+from modules.module import MtcModule
+from mypylib import color_print, print_table
+from mytoncore import b642hex
+from mytonctrl.utils import pop_arg_from_args
+
+
+class CollatorModule(MtcModule):
+
+    description = 'Blocks collator-only module.'
+    default_value = False
+
+
+    def add_collator_to_vc(self, adnl_addr: str, shard: str):
+        self.local.add_log("start add_collator_to_vc function", "debug")
+        result = self.ton.validatorConsole.Run(f"add-collator {adnl_addr} {shard}")
+        return result
+
+    def setup_collator(self, args: list):
+        from mytoninstaller.mytoninstaller import set_node_argument
+        from mytoninstaller.node_args import get_node_args
+
+        if not args:
+            color_print("{red}Bad args. Usage:{endc} setup_collator [--force] [--adnl <ADNL address>] <shard1> <shard2> ...")
+            return
+        if self.get_collators() and '--force' not in args:
+            raise Exception(f'This node already has working collators. Note that it\'s highly not recommended to add new shards for node to monitor. If you are sure you want to add new collator use option `--force`.')
+        args.remove('--force') if '--force' in args else None
+        adnl_addr = pop_arg_from_args(args, '--adnl')
+        shards = args
+        if adnl_addr is None:
+            adnl_addr = self.ton.CreateNewKey()
+        self.ton.AddAdnlAddrToValidator(adnl_addr)
+        for shard in shards:
+            res = self.add_collator_to_vc(adnl_addr, shard)
+            if 'successfully' not in res:
+                raise Exception(f'Failed to enable collator: add-collator query failed: {res}')
+        self.local.add_log(f'Collator added for shards {shards} with ADNL address {adnl_addr}\n'
+                           f'Editing monitoring shards.')
+        node_args = get_node_args()
+        if '-M' not in node_args:
+            set_node_argument(self.local, ['-M'])
+        if '--add-shard' not in node_args:
+            node_args['--add-shard'] = []
+        shards_need_to_add = [shard for shard in shards if shard not in node_args['--add-shard']]
+        if shards_need_to_add:
+            set_node_argument(self.local, ['--add-shard', ' '.join(node_args['--add-shard'] + shards_need_to_add)])
+        self.local.add_log(f'Collator enabled for shards {shards}\n')
+
+    def get_collators(self):
+        return self.ton.GetValidatorConfig()['collators']
+
+    def print_collators(self, args: list = None):
+        collators = self.get_collators()
+        if not collators:
+            print("No collators found")
+            return
+        print("Collators list:")
+        table = [['ADNL Address', 'Shard']]
+        for c in collators:
+            table.append([b642hex(c['adnl_id']).upper(), f"{c['shard']['workchain']}:{c['shard']['shard']}"])
+        print_table(table)
+
+
+    @classmethod
+    def check_enable(cls, ton: "MyTonCore"):
+        if ton.using_validator():
+            raise Exception(f'Cannot enable collator mode while validator mode is enabled. '
+                            f'Use `disable_mode validator` first.')
+
+    def check_disable(self):
+        if not self.get_collators():
+            return
+        text = f"{{red}}WARNING: This node has active collator working and probably synchronizes not the whole blockchain, thus it may not work as expected in other node modes. Make sure you know what you're doing.{{endc}}\n"
+        color_print(text)
+        if input("Continue anyway? [Y/n]\n").strip().lower() not in ('y', ''):
+            print('aborted.')
+            return
+
+    def add_console_commands(self, console):
+        console.AddItem("setup_collator", self.setup_collator, self.local.translate("setup_collator"))
+        console.AddItem("print_local_collators", self.print_collators, self.local.translate("print_local_collators"))

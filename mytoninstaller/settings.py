@@ -1182,3 +1182,15 @@ def SetInitialSync(local):
 	SetConfig(path=mconfig_path, data=mconfig)
 
 	start_service(local, 'mytoncore')
+
+
+def SetupCollator(local):
+	if local.buffer.mode != "collator":
+		return
+	shards = os.getenv('COLLATE_SHARD', '').split()
+	if not shards:
+		shards = ['0:8000000000000000']
+	local.add_log(f"Setting up collator for shards: {shards}", "info")
+	args = ["python3", "-m", "mytoncore", "-e", "setup_collator_" + '_'.join(shards)]
+	args = ["su", "-l", local.buffer.user, "-c", ' '.join(args)]
+	subprocess.run(args)

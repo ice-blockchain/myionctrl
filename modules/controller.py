@@ -232,6 +232,11 @@ class ControllerModule(MtcModule):
         t = self.do_calculate_loan_amount_test()
         print(t)
 
+    @classmethod
+    def check_enable(cls, ton: "MyTonCore"):
+        from mytoninstaller.settings import enable_ton_http_api
+        enable_ton_http_api(ton.local)
+
     def add_console_commands(self, console):
         console.AddItem("create_controllers", self.create_controllers, self.local.translate("_"))
         console.AddItem("update_controllers", self.create_controllers, self.local.translate("_"))
