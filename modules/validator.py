@@ -1,9 +1,11 @@
+import json
 import time
 
 from modules.btc_teleport import BtcTeleportModule
 from mypylib.mypylib import color_print, get_timestamp
 from modules.module import MtcModule
-from mytonctrl.utils import timestamp2utcdatetime, GetColorInt
+from mytoncore import hex_shard_to_int, hex2b64
+from mytonctrl.utils import timestamp2utcdatetime, GetColorInt, pop_arg_from_args, is_hex
 
 
 class ValidatorModule(MtcModule):
@@ -114,8 +116,147 @@ class ValidatorModule(MtcModule):
                             f'Use `disable_mode liteserver` first.')
         BtcTeleportModule(ton, ton.local).init()
 
+    @staticmethod
+    def _parse_collators_list(output: str) -> dict:
+        result = {'shards': []}
+        lines = output.strip().split('\n')
+        current_shard = None
+        for line in lines:
+            line = line.strip()
+            if line.startswith('Shard ('):
+                shard_id = line.split('Shard (')[1].replace(',', ':').replace(')', '')
+                current_shard = {
+                    'shard_id': hex_shard_to_int(shard_id),
+                    'self_collate': None,
+                    'select_mode': None,
+                    'collators': []
+                }
+                result['shards'].append(current_shard)
+            elif line.startswith('Self collate = ') and current_shard:
+                current_shard['self_collate'] = line.split('Self collate = ')[1] == 'true'
+            elif line.startswith('Select mode = ') and current_shard:
+                current_shard['select_mode'] = line.split('Select mode = ')[1]
+            elif line.startswith('Collator ') and current_shard:
+                collator_id = line.split('Collator ')[1]
+                current_shard['collators'].append({'adnl_id': collator_id})
+        return result
+
+    def get_collators_list(self):
+        result = self.ton.validatorConsole.Run('show-collators-list')
+        if 'collators list is empty' in result:
+            return {}
+        return self._parse_collators_list(result)
+
+    def set_collators_list(self, collators_list: dict):
+        fname = self.ton.tempDir + '/collators_list.json'
+        with open(fname, 'w') as f:
+            f.write(json.dumps(collators_list))
+        result = self.ton.validatorConsole.Run(f'set-collators-list {fname}')
+        if 'success' not in result:
+            raise Exception(f'Failed to set collators list: {result}')
+
+    def add_collator(self, args: list):
+        if len(args) < 2:
+            color_print("{red}Bad args. Usage:{endc} add_shard_collators <shard> <adnl> [--self-collate <true/false>] [--select-mode <random/ordered/round_robin>]")
+            return
+        shard = args[0]
+        shard_id = hex_shard_to_int(shard)
+        adnl = args[1]
+        if is_hex(adnl):
+            adnl = hex2b64(adnl)
+        self_collate = pop_arg_from_args(args, '--self-collate') == 'true' if '--self-collate' in args else None
+        select_mode = pop_arg_from_args(args, '--select-mode')
+        if select_mode not in [None, 'random', 'ordered', 'round_robin']:
+            color_print("{red}Bad args. Select mode must be one of: random, ordered, round_robin{endc}")
+            return
+
+        collators_list = self.get_collators_list()
+        if 'shards' not in collators_list:
+            collators_list['shards'] = []
+
+        shard_exists = False
+        for sh in collators_list['shards']:
+            if sh['shard_id'] == shard_id:
+                if any(c['adnl_id'] == adnl for c in sh['collators']):
+                    raise Exception(f"Сollator {adnl} already exists in this shard {shard_id}.")
+                sh['collators'].append({'adnl_id': adnl})
+                shard_exists = True
+                if self_collate is not None:
+                    sh['self_collate'] = self_collate
+                if select_mode is not None:
+                    sh['select_mode'] = select_mode
+        if not shard_exists:
+            self_collate = self_collate if self_collate is not None else True
+            select_mode = select_mode or 'random'
+            self.local.add_log(f'Adding new shard {shard_id} to collators list. self_collate: {self_collate}, select_mode: {select_mode}', 'info')
+            collators_list['shards'].append({
+            'shard_id': shard_id,
+            'self_collate': self_collate,
+            'select_mode': select_mode,
+            'collators': [{'adnl_id': adnl}]
+        })
+        self.set_collators_list(collators_list)
+        color_print("add_collator - {green}OK{endc}")
+
+    def delete_collator(self, args: list):
+        if len(args) < 1:
+            color_print("{red}Bad args. Usage:{endc} delete_collator [shard] <adnl>")
+            return
+
+        shard_id = None
+        if ':' in args[0]:
+            shard_id = hex_shard_to_int(args[0])
+            args.pop(0)
+        adnl = args[0]
+        if is_hex(adnl):
+            adnl = hex2b64(adnl)
+
+        collators_list = self.get_collators_list()
+        if 'shards' not in collators_list or not collators_list['shards']:
+            color_print("{red}No collators found.{endc}")
+            return
+
+        deleted = False
+        for sh in collators_list['shards']:
+            if shard_id is None or sh['shard_id'] == shard_id:
+                for c in sh['collators']:
+                    if c['adnl_id'] == adnl:
+                        sh['collators'].remove(c)
+                        self.local.add_log(f'Removing collator {adnl} from shard {sh["shard_id"]}', 'info')
+                        if not sh['collators']:
+                            collators_list['shards'].remove(sh)
+                            self.local.add_log(f'Removing shard {sh["shard_id"]} from collators list because it has no collators left', 'info')
+                        deleted = True
+        if deleted:
+            self.set_collators_list(collators_list)
+        color_print("delete_collator - {green}OK{endc}")
+
+    def print_collators(self, args: list):
+        if '--json' in args:
+            print(json.dumps(self.get_collators_list(), indent=2))
+        else:
+            result = self.ton.validatorConsole.Run('show-collators-list')
+            result = result.split('conn ready')[1].strip()
+            if 'collators list is empty' in result:
+                print("No collators found")
+                return
+            print(result)
+
+    def reset_collators(self, args: list):
+        if not self.get_collators_list():
+            color_print("{red}No collators to reset.{endc}")
+            return
+        result = self.ton.validatorConsole.Run('clear-collators-list')
+        if 'success' not in result:
+            raise Exception(f'Failed to reset collators list: {result}')
+        color_print("reset_collators - {green}OK{endc}")
+
     def add_console_commands(self, console):
         console.AddItem("vo", self.vote_offer, self.local.translate("vo_cmd"))
         console.AddItem("ve", self.vote_election_entry, self.local.translate("ve_cmd"))
         console.AddItem("vc", self.vote_complaint, self.local.translate("vc_cmd"))
         console.AddItem("check_ef", self.check_efficiency, self.local.translate("check_ef_cmd"))
+        console.AddItem("add_collator", self.add_collator, self.local.translate("add_collator_cmd"))
+        console.AddItem("delete_collator", self.delete_collator, self.local.translate("delete_collator_cmd"))
+        console.AddItem("print_collators", self.print_collators, self.local.translate("print_collators_cmd"))
+        console.AddItem("reset_collators", self.reset_collators, self.local.translate("reset_collators_cmd"))

@@ -101,3 +101,14 @@ def parse_db_stats(path: str):
 
 def get_hostname():
     return subprocess.run(["hostname"], stdout=subprocess.PIPE).stdout.decode().strip()
+
+def hex_shard_to_int(shard_id_str: str) -> dict:
+    try:
+        wc, shard_hex = shard_id_str.split(':')
+        wc = int(wc)
+        shard = int(shard_hex, 16)
+        if shard >= 2 ** 63:
+            shard -= 2 ** 64
+        return {"workchain": wc, "shard": shard}
+    except (ValueError, IndexError):
+        raise Exception(f'Invalid shard ID "{shard_id_str}"')
