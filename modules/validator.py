@@ -157,7 +157,7 @@ class ValidatorModule(MtcModule):
 
     def add_collator(self, args: list):
         if len(args) < 2:
-            color_print("{red}Bad args. Usage:{endc} add_shard_collators <shard> <adnl> [--self-collate <true/false>] [--select-mode <random/ordered/round_robin>]")
+            color_print("{red}Bad args. Usage:{endc} add_collator <shard> <adnl> [--self-collate <true/false>] [--select-mode <random/ordered/round_robin>]")
             return
         shard = args[0]
         shard_id = hex_shard_to_int(shard)

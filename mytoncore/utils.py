@@ -112,3 +112,8 @@ def hex_shard_to_int(shard_id_str: str) -> dict:
         return {"workchain": wc, "shard": shard}
     except (ValueError, IndexError):
         raise Exception(f'Invalid shard ID "{shard_id_str}"')
+
+def signed_int_to_hex64(value):
+    if value < 0:
+        value = (1 << 64) + value
+    return f"{value:016X}"

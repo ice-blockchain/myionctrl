@@ -1,6 +1,6 @@
 from modules.module import MtcModule
 from mypylib import color_print, print_table
-from mytoncore import b642hex
+from mytoncore import b642hex, signed_int_to_hex64
 from mytonctrl.utils import pop_arg_from_args
 
 
@@ -44,7 +44,11 @@ class CollatorModule(MtcModule):
         shards_need_to_add = [shard for shard in shards if shard not in node_args['--add-shard']]
         if shards_need_to_add:
             set_node_argument(self.local, ['--add-shard', ' '.join(node_args['--add-shard'] + shards_need_to_add)])
-        self.local.add_log(f'Collator enabled for shards {shards}\n')
+        commands_text = [f'`add_collator {s} {adnl_addr}`' for s in shards]
+        self.local.add_log(f'Collator enabled for shards {shards}\n'
+                           f'To add this collator to validator use command:\n'
+                           + '\n'.join(commands_text))
+        color_print("setup_collator - {green}OK{endc}")
 
     def get_collators(self):
         return self.ton.GetValidatorConfig()['collators']
@@ -57,7 +61,7 @@ class CollatorModule(MtcModule):
         print("Collators list:")
         table = [['ADNL Address', 'Shard']]
         for c in collators:
-            table.append([b642hex(c['adnl_id']).upper(), f"{c['shard']['workchain']}:{c['shard']['shard']}"])
+            table.append([b642hex(c['adnl_id']).upper(), f"{c['shard']['workchain']}:{signed_int_to_hex64(int(c['shard']['shard']))}"])
         print_table(table)
 
 
