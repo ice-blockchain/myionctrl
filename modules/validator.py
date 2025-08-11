@@ -114,6 +114,9 @@ class ValidatorModule(MtcModule):
         if ton.using_liteserver():
             raise Exception(f'Cannot enable validator mode while liteserver mode is enabled. '
                             f'Use `disable_mode liteserver` first.')
+        if ton.using_collator():
+            raise Exception(f'Cannot enable validator mode while collator mode is enabled. '
+                            f'Use `disable_mode collator` first.')
         BtcTeleportModule(ton, ton.local).init()
 
     @staticmethod
