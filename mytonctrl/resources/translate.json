@@ -564,12 +564,12 @@
 		"ru": "Удалить BTC Teleport Oracle",
 		"zh_TW": "刪除 BTC Teleport Oracle"
 	},
-	"setup_collator": {
+	"setup_collator_cmd": {
 		"en": "Setup collator",
 		"ru": "Настроить коллатор",
 		"zh_TW": "設置協作者"
 	},
-	"print_local_collators": {
+	"print_local_collators_cmd": {
 		"en": "Print collators",
 		"ru": "Показать коллаторы",
 		"zh_TW": "顯示協作者"
