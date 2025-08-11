@@ -86,6 +86,6 @@ class CollatorConfigModule(MtcModule):
         color_print("update_collator_config - {green}OK{endc}")
 
     def add_console_commands(self, console):
-        console.AddItem("set_collator_config", self.set_collator_config, self.local.translate("set_collator_config_cmd"))
-        console.AddItem("update_collator_config", self.update_collator_config, self.local.translate("update_collator_config_cmd"))
-        console.AddItem("get_collator_config", self.get_collator_config, self.local.translate("get_collator_config_cmd"))
+        console.AddItem("set_collation_config", self.set_collator_config, self.local.translate("set_collation_config_cmd"))
+        console.AddItem("update_collation_config", self.update_collator_config, self.local.translate("update_collation_config_cmd"))
+        console.AddItem("print_collation_config", self.get_collator_config, self.local.translate("print_collation_config_cmd"))

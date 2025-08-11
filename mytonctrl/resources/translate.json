@@ -579,6 +579,21 @@
 		"ru": "Запустить бенчмарк",
 		"zh_TW": "運行基準測試"
 	},
+	"set_collation_config_cmd": {
+		"en": "Set block collation config",
+		"ru": "Установить конфиг сборки блоков",
+		"zh_TW": "設置區塊彙編配置"
+	},
+	"update_collation_config_cmd": {
+		"en": "Update block collation config",
+		"ru": "Обновить конфиг сборки блоков",
+		"zh_TW": "更新區塊彙編配置"
+	},
+	"print_collation_config_cmd": {
+		"en": "Print block collation config",
+		"ru": "Показать конфиг сборки блоков",
+		"zh_TW": "顯示區塊彙編配置"
+	},
 	"000a": {
 		"en": "001",
 		"ru": "002",

@@ -110,10 +110,6 @@ def Init(local, ton, console, argv):
 		module = ValidatorModule(ton, local)
 		module.add_console_commands(console)
 
-		from modules.collator_config import CollatorConfigModule
-		module = CollatorConfigModule(ton, local)
-		module.add_console_commands(console)
-
 		from modules.wallet import WalletModule
 		module = WalletModule(ton, local)
 		module.add_console_commands(console)
@@ -141,6 +137,11 @@ def Init(local, ton, console, argv):
 			from modules.controller import ControllerModule
 			module = ControllerModule(ton, local)
 			module.add_console_commands(console)
+
+	if ton.using_validator() or ton.using_collator():
+		from modules.collator_config import CollatorConfigModule
+		module = CollatorConfigModule(ton, local)
+		module.add_console_commands(console)
 
 	if ton.using_collator():
 		from modules.collator import CollatorModule
