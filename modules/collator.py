@@ -20,7 +20,7 @@ class CollatorModule(MtcModule):
         from mytoninstaller.node_args import get_node_args
 
         if not args:
-            color_print("{red}Bad args. Usage:{endc} setup_collator [--force] [--adnl <ADNL address>] <shard1> <shard2> ...")
+            color_print("{red}Bad args. Usage:{endc} setup_collator [--force] [--adnl <ADNL address>] <shard1> [shard2] ...")
             return
         force = '--force' in args
         args.remove('--force') if '--force' in args else None
@@ -88,14 +88,14 @@ class CollatorModule(MtcModule):
                 raise Exception(f'Failed to delete validator from collation whitelist: {result}')
         color_print("delete_validator_from_collation_wl - {green}OK{endc}")
 
-    def disable_collation_validator_vl(self, args: list):
+    def disable_collation_validator_wl(self, args: list):
         if len(args) != 0:
-            color_print("{red}Bad args. Usage:{endc} disable_collation_validator_vl")
+            color_print("{red}Bad args. Usage:{endc} disable_collation_validator_wl")
             return
         result = self.ton.validatorConsole.Run(f"collator-whitelist-enable 0")
         if 'success' not in result:
             raise Exception(f'Failed to disable collation validator whitelist: {result}')
-        color_print("disable_collation_validator_vl - {green}OK{endc}")
+        color_print("disable_collation_validator_wl - {green}OK{endc}")
 
     def print_collation_validators_whitelist(self, args: list = None):
         result = self.ton.validatorConsole.Run('collator-whitelist-show')
@@ -122,5 +122,5 @@ class CollatorModule(MtcModule):
         console.AddItem("print_local_collators", self.print_collators, self.local.translate("print_local_collators_cmd"))
         console.AddItem("add_validator_to_collation_wl", self.add_validator_to_collation_wl, self.local.translate("add_validator_to_collation_wl_cmd"))
         console.AddItem("delete_validator_from_collation_wl", self.delete_validator_from_collation_wl, self.local.translate("delete_validator_from_collation_wl_cmd"))
-        console.AddItem("disable_collation_validator_vl", self.disable_collation_validator_vl, self.local.translate("disable_collation_validator_vl_cmd"))
-        console.AddItem("print_collation_validators_whitelist", self.print_collation_validators_whitelist, self.local.translate("print_collation_validators_whitelist_cmd"))
+        console.AddItem("disable_collation_wl", self.disable_collation_validator_wl, self.local.translate("disable_collation_validator_wl_cmd"))
+        console.AddItem("print_collation_whitelist", self.print_collation_validators_whitelist, self.local.translate("print_collation_validators_whitelist_cmd"))
