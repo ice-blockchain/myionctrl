@@ -22,11 +22,17 @@ class CollatorModule(MtcModule):
         if not args:
             color_print("{red}Bad args. Usage:{endc} setup_collator [--force] [--adnl <ADNL address>] <shard1> <shard2> ...")
             return
-        if self.get_collators() and '--force' not in args:
-            raise Exception(f'This node already has working collators. Note that it\'s highly not recommended to add new shards for node to monitor. If you are sure you want to add new collator use option `--force`.')
+        force = '--force' in args
         args.remove('--force') if '--force' in args else None
         adnl_addr = pop_arg_from_args(args, '--adnl')
         shards = args
+        node_args = get_node_args()
+        if '--add-shard' not in node_args:
+            node_args['--add-shard'] = []
+        shards_need_to_add = [shard for shard in shards if shard not in node_args['--add-shard']]
+        if '-M' in node_args and shards_need_to_add and not force:
+            raise Exception(f'This node already has shards to monitor. It\'s highly not recommended to add new shards for node to monitor. If you are sure you want to add new collator use option `--force`.')
+
         if adnl_addr is None:
             adnl_addr = self.ton.CreateNewKey()
         self.ton.AddAdnlAddrToValidator(adnl_addr)
@@ -36,12 +42,8 @@ class CollatorModule(MtcModule):
                 raise Exception(f'Failed to enable collator: add-collator query failed: {res}')
         self.local.add_log(f'Collator added for shards {shards} with ADNL address {adnl_addr}\n'
                            f'Editing monitoring shards.')
-        node_args = get_node_args()
         if '-M' not in node_args:
             set_node_argument(self.local, ['-M'])
-        if '--add-shard' not in node_args:
-            node_args['--add-shard'] = []
-        shards_need_to_add = [shard for shard in shards if shard not in node_args['--add-shard']]
         if shards_need_to_add:
             set_node_argument(self.local, ['--add-shard', ' '.join(node_args['--add-shard'] + shards_need_to_add)])
         commands_text = [f'`add_collator {s} {adnl_addr}`' for s in shards]
