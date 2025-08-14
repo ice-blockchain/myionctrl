@@ -1,6 +1,7 @@
 import datetime
 import os
 import subprocess
+import sys
 import time
 import questionary
 import requests
@@ -243,6 +244,8 @@ def run_install(answers: dict):
         stdin=subprocess.DEVNULL
         command = ['nohup'] + command
     command += args.split()
+    run_args = sys.argv[1:]
+    command += run_args
 
     print(command)
 
