@@ -234,6 +234,20 @@ class ValidatorModule(MtcModule):
             self.set_collators_list(collators_list)
         color_print("delete_collator - {green}OK{endc}")
 
+    def _get_collators_stats(self):
+        output = self.ton.validatorConsole.Run('collation-manager-stats')
+        if 'No stats' in output:
+            return {}
+        result = {}
+        lines = output.split('\n')
+        prev_line = lines[0].strip()
+        for line in lines[1:]:
+            line = line.strip()
+            if line.startswith('alive'):
+                result[prev_line] = bool(int(line.split()[0].split('=')[1]))
+            prev_line = line
+        return result
+
     def print_collators(self, args: list):
         if '--json' in args:
             print(json.dumps(self.get_collators_list(), indent=2))
@@ -243,7 +257,12 @@ class ValidatorModule(MtcModule):
             if 'collators list is empty' in result:
                 print("No collators found")
                 return
-            print(result)
+            collators_stats = self._get_collators_stats()
+            for adnl, alive in collators_stats.items():
+                if adnl in result:
+                    status = '{green}online{endc}' if alive else '{red}offline{endc}'
+                    result = result.replace(adnl, f"{adnl} ({status})")
+            color_print(result)
 
     def reset_collators(self, args: list):
         if not self.get_collators_list():
