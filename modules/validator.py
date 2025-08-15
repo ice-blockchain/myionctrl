@@ -234,7 +234,7 @@ class ValidatorModule(MtcModule):
             self.set_collators_list(collators_list)
         color_print("delete_collator - {green}OK{endc}")
 
-    def _get_collators_stats(self):
+    def get_collators_stats(self):
         output = self.ton.validatorConsole.Run('collation-manager-stats')
         if 'No stats' in output:
             return {}
@@ -257,7 +257,7 @@ class ValidatorModule(MtcModule):
             if 'collators list is empty' in result:
                 print("No collators found")
                 return
-            collators_stats = self._get_collators_stats()
+            collators_stats = self.get_collators_stats()
             for adnl, alive in collators_stats.items():
                 if adnl in result:
                     status = '{green}online{endc}' if alive else '{red}offline{endc}'
