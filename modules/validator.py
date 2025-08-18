@@ -220,9 +220,9 @@ class ValidatorModule(MtcModule):
             return
 
         deleted = False
-        for sh in collators_list['shards']:
+        for sh in collators_list['shards'].copy():
             if shard_id is None or sh['shard_id'] == shard_id:
-                for c in sh['collators']:
+                for c in sh['collators'].copy():
                     if c['adnl_id'] == adnl:
                         sh['collators'].remove(c)
                         self.local.add_log(f'Removing collator {adnl} from shard {sh["shard_id"]}', 'info')
