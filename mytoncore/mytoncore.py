@@ -1180,7 +1180,7 @@ class MyTonCore():
 		if bounceable == False and destAccount.status == "active":
 			flags += ["--force-bounce"]
 			text = "Find non-bounceable flag, but destination account already active. Using bounceable flag"
-			self.local.AddLog(text, "warning")
+			self.local.add_log(text, "warning")
 		elif "-n" not in flags and bounceable == True and destAccount.status != "active":
 			raise Exception("Find bounceable flag, but destination account is not active. Use non-bounceable address or flag -n")
 		#end if
@@ -1706,10 +1706,10 @@ class MyTonCore():
 		subwallet_default = 698983191 + workchain # 0x29A9A317 + workchain
 		subwallet = kwargs.get("subwallet", subwallet_default)
 		version = kwargs.get("version", "hv1")
-		self.local.AddLog("start CreateHighWallet function", "debug")
+		self.local.add_log("start CreateHighWallet function", "debug")
 		wallet_path = self.walletsDir + name
 		if os.path.isfile(wallet_path + ".pk") and os.path.isfile(wallet_path + str(subwallet) + ".addr"):
-			self.local.AddLog("CreateHighWallet error: Wallet already exists: " + name + str(subwallet), "warning")
+			self.local.add_log("CreateHighWallet error: Wallet already exists: " + name + str(subwallet), "warning")
 		else:
 			args = ["new-highload-wallet.fif", workchain, subwallet, wallet_path]
 			result = self.fift.Run(args)
