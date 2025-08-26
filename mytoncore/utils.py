@@ -117,3 +117,63 @@ def signed_int_to_hex64(value):
     if value < 0:
         value = (1 << 64) + value
     return f"{value:016X}"
+
+
+_MASK64 = (1 << 64) - 1
+
+
+def _to_unsigned64(v: int) -> int:
+    return v & _MASK64
+
+
+def _lower_bit64(u: int) -> int:
+    if u == 0:
+        return 0
+    return u & ((-u) & _MASK64)
+
+
+def _bits_negate64(u: int) -> int:
+    return ~u + 1
+
+
+def shard_prefix_len(shard_id: int):
+    def _count_trailing_zeroes64(value: int) -> int:
+        u = value & _MASK64
+        if u == 0:
+            return 64
+        return ((u & -u).bit_length()) - 1
+    return 63 - _count_trailing_zeroes64(_to_unsigned64(shard_id))
+
+
+def shard_prefix(shard_id: int, length_: int):
+
+    def _to_signed64(v: int) -> int:
+        return v - (1 << 64) if v >= (1 << 63) else v
+
+    if not (0 <= length_ <= 63):
+        raise ValueError("length must be between 0 and 63 inclusive")
+    u = _to_unsigned64(shard_id)
+    x = _lower_bit64(u)
+    y = 1 << (63 - length_)
+    if y < x:
+        raise ValueError("requested prefix length is longer (more specific) than current shard id")
+    mask_non_lower = (~(y - 1)) & _MASK64  # equals -y mod 2^64; clears bits below y
+    res_u = (u & mask_non_lower) | y
+    return _to_signed64(res_u)
+
+
+def shard_contains(parent: int, child: int) -> bool:
+    parent = _to_unsigned64(parent)
+    child = _to_unsigned64(child)
+    x = _lower_bit64(parent)
+    mask = (_bits_negate64(x) << 1) & _MASK64
+    return not ((parent ^ child) & mask)
+
+
+def shard_is_ancestor(parent: int, child: int) -> bool:
+    up = _to_unsigned64(parent)
+    uc = _to_unsigned64(child)
+    x = _lower_bit64(up)
+    y = _lower_bit64(uc)
+    mask = (_bits_negate64(x) << 1) & _MASK64
+    return x >= y and not ((up ^ uc) & mask)

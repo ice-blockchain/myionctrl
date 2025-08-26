@@ -1,6 +1,6 @@
 from modules.module import MtcModule
 from mypylib import color_print, print_table
-from mytoncore import b642hex, signed_int_to_hex64
+from mytoncore import b642hex, signed_int_to_hex64, shard_prefix_len, hex_shard_to_int, shard_prefix, shard_is_ancestor
 from mytonctrl.utils import pop_arg_from_args
 
 
@@ -14,6 +14,32 @@ class CollatorModule(MtcModule):
         self.local.add_log("start add_collator_to_vc function", "debug")
         result = self.ton.validatorConsole.Run(f"add-collator {adnl_addr} {shard}")
         return result
+
+    @staticmethod
+    def _check_input_shards(node_shards: list, shards_need_to_add: list, monitor_min_split: int):
+        true_monitoring_shards = []
+        for sh in node_shards:
+            shard_id = hex_shard_to_int(sh)
+            if shard_id['workchain'] == -1:
+                continue
+            shard = shard_id['shard']
+            if shard_prefix_len(shard) > monitor_min_split:
+                shard_id['shard'] = shard_prefix(shard, monitor_min_split)
+            true_monitoring_shards.append(shard_id)
+        for sh in shards_need_to_add:
+            shard_id = hex_shard_to_int(sh)
+            found = False
+            for true_shard in true_monitoring_shards:
+                if shard_id['workchain'] == true_shard['workchain'] and \
+                        shard_is_ancestor(true_shard['shard'], shard_id['shard']):
+                    found = True
+                    break
+            if not found:
+                raise Exception(
+                    f'This node already has shards to monitor, '
+                    f'but shard {shard_id} is not monitored by the node: {true_monitoring_shards} It\'s highly not recommended to add new shards for node to monitor. '
+                    f'If you are sure you want to add new collator use option `--force`.'
+                )
 
     def setup_collator(self, args: list):
         from mytoninstaller.mytoninstaller import set_node_argument
@@ -29,10 +55,12 @@ class CollatorModule(MtcModule):
         node_args = get_node_args()
         if '--add-shard' not in node_args:
             node_args['--add-shard'] = []
-        shards_need_to_add = [shard for shard in shards if shard not in node_args['--add-shard']]
-        if '-M' in node_args and shards_need_to_add and not force:
-            raise Exception(f'This node already has shards to monitor. It\'s highly not recommended to add new shards for node to monitor. If you are sure you want to add new collator use option `--force`.')
 
+        node_shards = node_args['--add-shard']
+        shards_need_to_add = [shard for shard in shards if shard not in node_shards]
+        if not force and shards_need_to_add and '-M' in node_args:
+            monitor_min_split = self.ton.get_basechain_config()['monitor_min_split']
+            self._check_input_shards(node_shards, shards_need_to_add, monitor_min_split)
         if adnl_addr is None:
             adnl_addr = self.ton.CreateNewKey()
         self.ton.AddAdnlAddrToValidator(adnl_addr)

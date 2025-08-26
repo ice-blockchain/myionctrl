@@ -636,10 +636,13 @@ class MyTonCore():
 
 	def GetRootWorkchainEnabledTime(self):
 		self.local.add_log("start GetRootWorkchainEnabledTime function", "debug")
-		config12 = self.GetConfig(12)
-		enabledTime = config12["workchains"]["root"]["node"]["value"]["enabled_since"]
+		enabledTime = self.get_basechain_config()["enabled_since"]
 		return enabledTime
 	#end define
+
+	def get_basechain_config(self):
+		config12 = self.GetConfig(12)
+		return config12["workchains"]["root"]["node"]["value"]
 
 	def GetTotalValidators(self):
 		self.local.add_log("start GetTotalValidators function", "debug")
