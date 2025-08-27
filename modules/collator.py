@@ -80,6 +80,47 @@ class CollatorModule(MtcModule):
                            + '\n'.join(commands_text))
         color_print("setup_collator - {green}OK{endc}")
 
+    def stop_collator(self, args: list):
+        if not args:
+            text = f"{{red}}WARNING: This action will stop and delete all local collation broadcasts from this node for all shards.{{endc}}\n"
+            color_print(text)
+            if input("Continue anyway? [Y/n]\n").strip().lower() not in ('y', ''):
+                print('aborted.')
+                return
+            collators = self.get_collators()
+            if not collators:
+                print("No collators found")
+                return
+            errors = []
+            for c in collators:
+                adnl_hex = b642hex(c['adnl_id']).upper()
+                workchain = int(c['shard']['workchain'])
+                shard_int = int(c['shard']['shard'])
+                res = self.ton.validatorConsole.Run(f"del-collator {adnl_hex} {workchain} {shard_int}")
+                if 'success' not in res.lower():
+                    errors.append(res.strip())
+            if errors:
+                raise Exception(f"Failed to delete some collators: {'; '.join(errors)}")
+            color_print("stop_collator - {green}OK{endc}")
+            return
+
+        if len(args) == 2:
+            adnl_addr, shard_str = args
+            if ':' not in shard_str:
+                color_print("{red}Bad args. Usage:{endc} stop_collator <adnl_id> <workchain>:<shard_hex>")
+                return
+            shard_id = hex_shard_to_int(shard_str)
+            workchain = int(shard_id['workchain'])
+            shard_int = int(shard_id['shard'])
+        else:
+            color_print("{red}Bad args. Usage:{endc} stop_collator <adnl_id> <workchain>:<shard_hex>")
+            return
+
+        res = self.ton.validatorConsole.Run(f"del-collator {adnl_addr} {workchain} {shard_int}")
+        if 'successfully removed collator' not in res.lower():
+            raise Exception(f'Failed to disable collator: del-collator query failed: {res}')
+        color_print("stop_collator - {green}OK{endc}")
+
     def get_collators(self):
         return self.ton.GetValidatorConfig()['collators']
 
@@ -139,7 +180,7 @@ class CollatorModule(MtcModule):
     def check_disable(self):
         if not self.get_collators():
             return
-        text = f"{{red}}WARNING: This node has active collator working and probably synchronizes not the whole blockchain, thus it may not work as expected in other node modes. Make sure you know what you're doing.{{endc}}\n"
+        text = f"{{red}}WARNING: This node probably has active collator working and synchronizes not the whole blockchain, thus it may not work as expected in other node modes. Make sure you know what you're doing.{{endc}}\n"
         color_print(text)
         if input("Continue anyway? [Y/n]\n").strip().lower() not in ('y', ''):
             print('aborted.')
@@ -152,3 +193,4 @@ class CollatorModule(MtcModule):
         console.AddItem("delete_validator_from_collation_wl", self.delete_validator_from_collation_wl, self.local.translate("delete_validator_from_collation_wl_cmd"))
         console.AddItem("disable_collation_wl", self.disable_collation_validator_wl, self.local.translate("disable_collation_validator_wl_cmd"))
         console.AddItem("print_collation_whitelist", self.print_collation_validators_whitelist, self.local.translate("print_collation_validators_whitelist_cmd"))
+        console.AddItem("stop_collator", self.stop_collator, self.local.translate("stop_collator_cmd"))
