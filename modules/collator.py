@@ -74,7 +74,7 @@ class CollatorModule(MtcModule):
             set_node_argument(self.local, ['-M'])
         if shards_need_to_add:
             set_node_argument(self.local, ['--add-shard', ' '.join(node_args['--add-shard'] + shards_need_to_add)])
-        commands_text = [f'`add_collator {s} {adnl_addr}`' for s in shards]
+        commands_text = [f'`add_collator {adnl_addr} {s}`' for s in shards]
         self.local.add_log(f'Collator enabled for shards {shards}\n'
                            f'To add this collator to validator use command:\n'
                            + '\n'.join(commands_text))
