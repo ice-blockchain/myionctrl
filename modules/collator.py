@@ -178,13 +178,12 @@ class CollatorModule(MtcModule):
                             f'Use `disable_mode validator` first.')
 
     def check_disable(self):
-        if not self.get_collators():
-            return
-        text = f"{{red}}WARNING: This node probably has active collator working and synchronizes not the whole blockchain, thus it may not work as expected in other node modes. Make sure you know what you're doing.{{endc}}\n"
+        have_collators_text = 'has active collator working and ' if self.get_collators() else ''
+        text = f"{{red}}WARNING: This node {have_collators_text}probably synchronizes not the whole blockchain, thus it may not work as expected in other node modes. Make sure you know what you're doing.{{endc}}\n"
         color_print(text)
         if input("Continue anyway? [Y/n]\n").strip().lower() not in ('y', ''):
-            print('aborted.')
-            return
+            raise Exception('aborted.')
+
 
     def add_console_commands(self, console):
         console.AddItem("setup_collator", self.setup_collator, self.local.translate("setup_collator_cmd"))
