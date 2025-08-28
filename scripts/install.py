@@ -1,6 +1,7 @@
 import datetime
 import os
 import subprocess
+import sys
 import time
 import questionary
 import requests
@@ -93,7 +94,7 @@ def validate_shard_format(value):
 def run_cli():
     mode = questionary.select(
         "Select installation mode (More on https://docs.ton.org/participate/nodes/node-types)",
-        choices=["validator", "liteserver"],
+        choices=["validator", "liteserver", "collator"],
     ).unsafe_ask()
 
     network = questionary.select(
@@ -116,7 +117,7 @@ def run_cli():
         ).unsafe_ask()
 
     archive_blocks = None
-    if mode != "validator":
+    if mode == "liteserver":
         archive_blocks = questionary.text(
             "Do you want to download archive blocks via TON Storage? Press Enter to skip.\n"
             "If yes, provide block seqno or date to start from and (optionally) block seqno or date to end with (send `1` to download all blocks and setup full archive node).\n"
@@ -150,12 +151,21 @@ def run_cli():
             "This reduces synchronization time but requires to download a large file"
         ).unsafe_ask()
 
-    add_shard = questionary.text(
-        "Set shards node will sync. Press Enter to sync all shards.\n"
-        "Format: <workchain>:<shard>. Divide multiple shards with space.\n"
-        "Example: `0:2000000000000000 0:6000000000000000`",
-        validate=validate_shard_format
-    ).unsafe_ask()
+    collate_shard, add_shard = None, None
+    if mode == "collator":
+        collate_shard = questionary.text(
+            "Set shards node will sync and collate blocks for. Press Enter to collate blocks for all shards.\n"
+            "Format: <workchain>:<shard>. Divide multiple shards with space.\n"
+            "Example: `0:2000000000000000 0:6000000000000000`",
+            validate=validate_shard_format
+        ).unsafe_ask()
+    else:
+        add_shard = questionary.text(
+            "Set shards node will sync. Press Enter to sync all shards.\n"
+            "Format: <workchain>:<shard>. Divide multiple shards with space.\n"
+            "Example: `0:2000000000000000 0:6000000000000000`",
+            validate=validate_shard_format
+        ).unsafe_ask()
 
     background = questionary.confirm(
         "Do you want to run MyTonCtrl installation in the background?"
@@ -171,6 +181,7 @@ def run_cli():
         'state-ttl': state_ttl,
         "dump": dump,
         "add-shard": add_shard,
+        'collate-shard': collate_shard,
         "background": background
     }
     print(answers)
@@ -184,6 +195,7 @@ def run_install(answers: dict):
     archive_ttl = answers["archive-ttl"]
     state_ttl = answers["state-ttl"]
     add_shard = answers["add-shard"]
+    collate_shard = answers["collate-shard"]
     validator_mode = answers["validator-mode"]
     archive_blocks = answers["archive-blocks"]
     dump = answers["dump"]
@@ -204,6 +216,8 @@ def run_install(answers: dict):
         os.environ['STATE_TTL'] = state_ttl
     if add_shard:
         os.environ['ADD_SHARD'] = add_shard
+    if collate_shard:
+        os.environ['COLLATE_SHARD'] = collate_shard
     if archive_blocks:
         os.environ['ARCHIVE_BLOCKS'] = archive_blocks
         command += ['-v', 'master']
@@ -230,6 +244,8 @@ def run_install(answers: dict):
         stdin=subprocess.DEVNULL
         command = ['nohup'] + command
     command += args.split()
+    run_args = sys.argv[1:]
+    command += run_args
 
     print(command)
 

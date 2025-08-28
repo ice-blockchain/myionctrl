@@ -110,10 +110,6 @@ def Init(local, ton, console, argv):
 		module = ValidatorModule(ton, local)
 		module.add_console_commands(console)
 
-		from modules.collator_config import CollatorConfigModule
-		module = CollatorConfigModule(ton, local)
-		module.add_console_commands(console)
-
 		from modules.wallet import WalletModule
 		module = WalletModule(ton, local)
 		module.add_console_commands(console)
@@ -141,6 +137,16 @@ def Init(local, ton, console, argv):
 			from modules.controller import ControllerModule
 			module = ControllerModule(ton, local)
 			module.add_console_commands(console)
+
+	if ton.using_validator() or ton.using_collator():
+		from modules.collator_config import CollatorConfigModule
+		module = CollatorConfigModule(ton, local)
+		module.add_console_commands(console)
+
+	if ton.using_collator():
+		from modules.collator import CollatorModule
+		module = CollatorModule(ton, local)
+		module.add_console_commands(console)
 
 	if ton.using_alert_bot():
 		from modules.alert_bot import AlertBotModule
@@ -862,6 +868,8 @@ def PrintLocalStatus(local, ton, adnlAddr, validatorIndex, validatorEfficiency, 
 		btc_teleport_version_text = local.translate("local_status_version_teleport").format(btc_teleport_git_hash_text, btc_teleport_git_branch_text)
 
 	color_print(local.translate("local_status_head"))
+	node_mode = ton.get_node_mode()
+	color_print(local.translate("node_mode").format(node_mode))
 	node_ip = ton.get_validator_engine_ip()
 	is_node_remote = node_ip != '127.0.0.1'
 	if is_node_remote:

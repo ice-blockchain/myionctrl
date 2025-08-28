@@ -30,7 +30,7 @@ from mytoninstaller.settings import (
 	CreateSymlinks,
 	enable_ls_proxy,
 	enable_ton_storage,
-	EnableMode, ConfigureFromBackup, ConfigureOnlyNode, SetInitialSync
+	EnableMode, ConfigureFromBackup, ConfigureOnlyNode, SetInitialSync, SetupCollator
 )
 from mytoninstaller.config import (
 	CreateLocalConfig,
@@ -314,6 +314,7 @@ def General(local, console):
 	ConfigureFromBackup(local)
 	ConfigureOnlyNode(local)
 	SetInitialSync(local)
+	SetupCollator(local)
 #end define
 
 

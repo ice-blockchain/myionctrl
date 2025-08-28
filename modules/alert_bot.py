@@ -4,7 +4,7 @@ import requests
 
 from modules.module import MtcModule
 from mypylib.mypylib import get_timestamp, print_table, color_print
-from mytoncore import get_hostname
+from mytoncore import get_hostname, signed_int_to_hex64
 from mytonctrl.utils import timestamp2utcdatetime
 
 
@@ -34,6 +34,12 @@ def init_alerts():
             "Validator's wallet <code>{wallet}</code> balance is less than 10 TON: {balance} TON.",
             18 * HOUR
         ),
+        "low_wallet_balance_ok": Alert(
+            "info",
+            "Validator's wallet balance is back to normal",
+            "Validator's wallet <code>{wallet}</code> balance is {balance} TON.",
+            0
+        ),
         "db_usage_80": Alert(
             "high",
             "Node's db usage is more than 80%",
@@ -50,6 +56,12 @@ def init_alerts():
             or (and) set node\'s archive ttl to lower value.""",
             6 * HOUR
         ),
+        "db_usage_ok": Alert(
+            "info",
+            "Node's db usage is back to normal",
+            "TON DB usage is back to normal: <b>{usage}%</b>.",
+            0
+        ),
         "low_efficiency": Alert(
             "high",
             "Validator had efficiency less than 90% in the validation round",
@@ -62,23 +74,47 @@ def init_alerts():
             "Node is out of sync on more than 20 sec: <b>{sync} sec</b>.",
             300
         ),
+        "sync_ok": Alert(
+            "info",
+            "Node is back in sync",
+            "Node is back in sync: <b>{sync} sec</b>.",
+            0
+        ),
         "service_down": Alert(
             "critical",
-            "Node is not running (service is down)",
-            "validator.service is down.",
+            "Node is not running",
+            "Node is not running. Probably daemon service is down.",
             300
+        ),
+        "service_down_ok": Alert(
+            "info",
+            "Node is recovered",
+            "Node is running.",
+            0
         ),
         "adnl_connection_failed": Alert(
             "high",
             "Node is not answering to ADNL connection",
-            "ADNL connection to node failed",
+            "ADNL connection to node failed.",
             3 * HOUR
+        ),
+        "adnl_connection_ok": Alert(
+            "info",
+            "ADNL connection restored",
+            "ADNL connection to node is OK.",
+            0
         ),
         "zero_block_created": Alert(
             "critical",
             "Validator has not created any blocks in the last few hours",
             "Validator has not created any blocks in the last <b>{hours} hours</b>.",
             int(VALIDATION_PERIOD / 2.3)
+        ),
+        "zero_block_created_ok": Alert(
+            "info",
+            "Validator resumed block production",
+            "Validator resumed block production. Blocks produced in the recent window: <b>{blocks}</b> in ~<b>{hours}h</b>.",
+            0
         ),
         "validator_slashed": Alert(
             "high",
@@ -116,12 +152,30 @@ def init_alerts():
             "Found proposals with hashes `{hashes}` that have significant amount of votes, but current validator didn't vote for them. Please check @tonstatus for more details.",
             VALIDATION_PERIOD
         ),
+        "voting_ok": Alert(
+            "info",
+            "All high-priority proposals are voted",
+            "All high-priority proposals are voted or no longer require action.",
+            0
+        ),
         "initial_sync_completed": Alert(
             "info",
             "Initial sync has been completed (info alert with no sound)",
             "Node initial sync has been completed",
             0
-        )
+        ),
+        "shard_collators_offline": Alert(
+            "high",
+            "All collators for specific shards are offline",
+            "All collators for shards <code>{shards}</code> are offline.",
+            3600
+        ),
+        "shard_collators_ok": Alert(
+            "info",
+            "Shards have online collators again",
+            "All required shards have online collators again.",
+            0
+        ),
     }
 
 
@@ -156,7 +210,7 @@ class AlertBotModule(MtcModule):
         if not response['ok']:
             raise Exception(f"send_message error: {response}")
 
-    def send_alert(self, alert_name: str, *args, **kwargs):
+    def send_alert(self, alert_name: str, *args, track_active: bool = True, **kwargs):
         if not self.alert_is_enabled(alert_name):
             return
         last_sent = self.get_alert_sent(alert_name)
@@ -169,8 +223,10 @@ class AlertBotModule(MtcModule):
         for key, value in kwargs.items():
             if isinstance(value, (int, float)):
                 kwargs[key] = f'{value:,}'.replace(',', ' ')  # make space separator for thousands
-
-        text = '🆘' if alert.severity != 'info' else ''
+        if alert_name.endswith('_ok'):
+            text = '✅'
+        else:
+            text = '🆘' if alert.severity != 'info' else ''
         text += f''' <b>Node {self.hostname}: {alert_name_readable} </b> 
 
 {alert.text.format(*args, **kwargs)}
@@ -190,6 +246,30 @@ Severity: <code>{alert.severity}</code>
         if time.time() - last_sent > alert.timeout:
             self.send_message(text, alert.severity == "info")  # send info alerts without sound
             self.set_alert_sent(alert_name)
+            if track_active:
+                self._set_alert_active(alert_name, True)
+
+    def resolve_alert(self, alert_name: str, ok_alert_name: str = None, **kwargs):
+        if not self._is_alert_active(alert_name):
+            return
+        ok_alert_name = ok_alert_name or f"{alert_name}_ok"
+        if ok_alert_name not in ALERTS:
+            self._set_alert_active(alert_name, False)
+            return
+        if not self.alert_is_enabled(ok_alert_name):
+            self._set_alert_active(alert_name, False)
+            return
+        self.send_alert(ok_alert_name, track_active=False, **kwargs)
+        self._set_alert_active(alert_name, False)
+
+    def resolve_alert_group(self, alert_names: list, ok_alert_name: str, **kwargs):
+        if not any(self._is_alert_active(name) for name in alert_names):
+            return
+        if ok_alert_name in ALERTS and self.alert_is_enabled(ok_alert_name):
+            self.send_alert(ok_alert_name, track_active=False, **kwargs)
+        for name in alert_names:
+            if self._is_alert_active(name):
+                self._set_alert_active(name, False)
 
     def set_global_vars(self):
         # set global vars for correct alerts timeouts for current network
@@ -222,7 +302,7 @@ Severity: <code>{alert.severity}</code>
         if 'alerts' not in self.ton.local.db:
             self.ton.local.db['alerts'] = {}
         if alert_name not in self.ton.local.db['alerts']:
-            self.ton.local.db['alerts'][alert_name] = {'sent': 0, 'enabled': True}
+            self.ton.local.db['alerts'][alert_name] = {'sent': 0, 'enabled': True, 'active': False, 'resolved_sent': 0}
         return self.ton.local.db['alerts'][alert_name]
 
     def set_alert_sent(self, alert_name: str):
@@ -241,6 +321,16 @@ Severity: <code>{alert.severity}</code>
         alert = self.get_alert_from_db(alert_name)
         alert['enabled'] = enabled
         self.ton.local.save()
+
+    def _set_alert_active(self, alert_name: str, active: bool):
+        alert = self.get_alert_from_db(alert_name)
+        if alert.get('active') != active:
+            alert['active'] = active
+            if not active:
+                alert['resolved_sent'] = int(time.time())
+
+    def _is_alert_active(self, alert_name: str) -> bool:
+        return self.get_alert_from_db(alert_name).get('active', False)
 
     def enable_alert(self, args):
         if len(args) != 1:
@@ -314,6 +404,8 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
             self.send_alert("db_usage_95")
         elif usage > 80:
             self.send_alert("db_usage_80")
+        else:
+            self.resolve_alert_group(["db_usage_95", "db_usage_80"], "db_usage_ok", usage=int(usage))
 
     def check_validator_wallet_balance(self):
         if not self.ton.using_validator():
@@ -325,6 +417,8 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         validator_account = self.ton.GetAccount(validator_wallet.addrB64)
         if validator_account.status != "empty" and validator_account.balance < 10:
             self.send_alert("low_wallet_balance", wallet=validator_wallet.addrB64, balance=validator_account.balance)
+        else:
+            self.resolve_alert("low_wallet_balance", ok_alert_name="low_wallet_balance_ok", wallet=validator_wallet.addrB64, balance=validator_account.balance)
 
     def check_efficiency(self):
         if not self.ton.using_validator():
@@ -345,11 +439,15 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         validator_status = self.ton.GetValidatorStatus()
         if not self.initial_sync and not validator_status.is_working:
             self.send_alert("service_down")
+        elif not self.initial_sync and validator_status.is_working:
+            self.resolve_alert("service_down", ok_alert_name="service_down_ok")
 
     def check_sync(self):
         validator_status = self.ton.GetValidatorStatus()
         if not self.initial_sync and validator_status.is_working and validator_status.out_of_sync >= 20:
             self.send_alert("out_of_sync", sync=validator_status.out_of_sync)
+        elif not self.initial_sync and validator_status.is_working and validator_status.out_of_sync < 20:
+            self.resolve_alert("out_of_sync", ok_alert_name="sync_ok", sync=validator_status.out_of_sync)
 
     def check_zero_blocks_created(self):
         if not self.ton.using_validator():
@@ -362,7 +460,10 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
             return
         validators = self.ton.GetValidatorsList(start=start, end=end)
         validator = self.validator_module.find_myself(validators)
-        if validator is None or validator.blocks_created > 0:
+        if validator is None:
+            return
+        if validator.blocks_created > 0:
+            self.resolve_alert("zero_block_created", ok_alert_name="zero_block_created_ok", blocks=validator.blocks_created, hours=round(period / 3600))
             return
         self.send_alert("zero_block_created", hours=round(period / 3600))
 
@@ -380,6 +481,8 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         if not ok:
             self.local.add_log(error, "warning")
             self.send_alert("adnl_connection_failed")
+        else:
+            self.resolve_alert("adnl_connection_failed", ok_alert_name="adnl_connection_ok")
 
     def get_myself_from_election(self, config: dict):
         if not config["validators"]:
@@ -444,6 +547,8 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
                 need_to_vote.append(offer['hash'])
         if need_to_vote:
             self.send_alert("voting", hashes=' '.join(need_to_vote))
+        else:
+            self.resolve_alert("voting", ok_alert_name="voting_ok")
 
     def check_initial_sync(self):
         if not self.initial_sync:
@@ -451,6 +556,29 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         if not self.ton.in_initial_sync():
             self.initial_sync = False
             self.send_alert("initial_sync_completed")
+
+    def check_online_collators(self):
+        if not self.ton.using_validator():
+            return
+        collators_list = self.validator_module.get_collators_list()
+        if not collators_list or not collators_list['shards']:
+            return
+        collators_stats = self.validator_module.get_collators_stats()
+        offline_shards = []
+
+        for shard in collators_list['shards']:
+            if not shard['collators']:
+                continue
+            collators_alive = []
+            for c in shard['collators']:
+                collators_alive.append(collators_stats.get(c['adnl_id']))
+            if not any(collators_alive):
+                offline_shards.append(f"{shard['shard_id']['workchain']}:{signed_int_to_hex64(int(shard['shard_id']['shard']))}")
+
+        if offline_shards:
+            self.send_alert("shard_collators_offline", shards=' '.join(offline_shards))
+        else:
+            self.resolve_alert("shard_collators_offline", ok_alert_name="shard_collators_ok")
 
     def check_status(self):
         if not self.ton.using_alert_bot():
@@ -471,6 +599,7 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         self.local.try_function(self.check_stake_returned)
         self.local.try_function(self.check_voting)
         self.local.try_function(self.check_initial_sync)
+        self.local.try_function(self.check_online_collators)
 
     def add_console_commands(self, console):
         console.AddItem("enable_alert", self.enable_alert, self.local.translate("enable_alert_cmd"))

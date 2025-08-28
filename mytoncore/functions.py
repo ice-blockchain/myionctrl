@@ -57,6 +57,8 @@ def Event(local, event_name):
         enable_mode(local, event_name)
     elif event_name == "enable_btc_teleport":
         enable_btc_teleport(local)
+    elif event_name.startswith("setup_collator"):
+        setup_collator(local, event_name)
     local.exit()
 # end define
 
@@ -84,18 +86,31 @@ def ValidatorDownEvent(local):
 # end define
 
 
-def enable_mode(local, event_name):
+def enable_mode(local, event_name: str):
     ton = MyTonCore(local)
     mode = event_name.split("_")[-1]
-    if mode == "liteserver":
+    if mode in ("liteserver", "collator"):
         ton.disable_mode('validator')
     ton.enable_mode(mode)
 #end define
 
 def enable_btc_teleport(local):
+    local.add_log("start enable_btc_teleport function", "debug")
     ton = MyTonCore(local)
+    if not ton.using_validator():
+        local.add_log("Skip installing BTC Teleport as node is not a validator", "info")
+        return
     from modules.btc_teleport import BtcTeleportModule
     BtcTeleportModule(ton, local).init(reinstall=True)
+
+
+def setup_collator(local, event_name: str):
+    local.add_log("start setup_collator function", "debug")
+    ton = MyTonCore(local)
+    from modules.collator import CollatorModule
+    shards = event_name.split("_")[2:]
+    CollatorModule(ton, local).setup_collator(shards)
+
 
 def Elections(local, ton):
     use_pool = ton.using_pool()

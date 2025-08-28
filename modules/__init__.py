@@ -1,6 +1,7 @@
 import typing
 from dataclasses import dataclass
 
+from modules.collator import CollatorModule
 from modules.module import MtcModule
 from modules.pool import PoolModule
 from modules.nominator_pool import NominatorPoolModule
@@ -18,6 +19,7 @@ MODES = {
     'single-nominator': SingleNominatorModule,
     'liquid-staking': ControllerModule,
     'liteserver': LiteserverModule,
+    'collator': CollatorModule,
     'alert-bot': AlertBotModule,
     'prometheus': PrometheusModule
 }

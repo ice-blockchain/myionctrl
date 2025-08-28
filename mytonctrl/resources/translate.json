@@ -259,6 +259,11 @@
 		"ru": "{cyan}===[ Статус ноды ]==={endc}",
 		"zh_TW": "{cyan}===[ 节点狀態 ]==={endc}"
 	},
+	"node_mode": {
+		"en": "Node mode: {{underline}}{0}{{endc}}",
+		"ru": "Режим ноды: {{underline}}{0}{{endc}}",
+		"zh_TW": "節點模式: {{underline}}{0}{{endc}}"
+	},
 	"node_ip_address": {
 		"en": "Node IP address: {{bold}}{0}{{endc}}",
 		"ru": "IP адрес Ноды: {{bold}}{0}{{endc}}",
@@ -559,10 +564,35 @@
 		"ru": "Удалить BTC Teleport Oracle",
 		"zh_TW": "刪除 BTC Teleport Oracle"
 	},
+	"setup_collator_cmd": {
+		"en": "Setup collator",
+		"ru": "Настроить коллатор",
+		"zh_TW": "設置協作者"
+	},
+	"print_local_collators_cmd": {
+		"en": "Print collators",
+		"ru": "Показать коллаторы",
+		"zh_TW": "顯示協作者"
+	},
 	"benchmark_cmd": {
 		"en": "Run benchmark",
 		"ru": "Запустить бенчмарк",
 		"zh_TW": "運行基準測試"
+	},
+	"set_collation_config_cmd": {
+		"en": "Set block collation config",
+		"ru": "Установить конфиг сборки блоков",
+		"zh_TW": "設置區塊彙編配置"
+	},
+	"update_collation_config_cmd": {
+		"en": "Update block collation config",
+		"ru": "Обновить конфиг сборки блоков",
+		"zh_TW": "更新區塊彙編配置"
+	},
+	"print_collation_config_cmd": {
+		"en": "Print block collation config",
+		"ru": "Показать конфиг сборки блоков",
+		"zh_TW": "顯示區塊彙編配置"
 	},
 	"000a": {
 		"en": "001",

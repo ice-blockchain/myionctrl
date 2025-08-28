@@ -93,7 +93,7 @@ if [ "${mode}" = "none" ] && [ "$backup" = "none" ]; then  # no mode or backup w
         python3 -m pip install --upgrade pip
     fi
     pip3 install questionary==2.1.0 --break-system-packages
-    python3 install.py
+    python3 install.py "$@"
     pip3 uninstall questionary -y
     exit
 fi

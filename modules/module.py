@@ -15,3 +15,10 @@ class MtcModule(ABC):
 
     @abstractmethod
     def add_console_commands(self, console):  ...
+
+    @classmethod
+    def check_enable(cls, ton: "MyTonCore"):
+        return
+
+    def check_disable(self):
+        return

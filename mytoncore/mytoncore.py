@@ -636,10 +636,13 @@ class MyTonCore():
 
 	def GetRootWorkchainEnabledTime(self):
 		self.local.add_log("start GetRootWorkchainEnabledTime function", "debug")
-		config12 = self.GetConfig(12)
-		enabledTime = config12["workchains"]["root"]["node"]["value"]["enabled_since"]
+		enabledTime = self.get_basechain_config()["enabled_since"]
 		return enabledTime
 	#end define
+
+	def get_basechain_config(self):
+		config12 = self.GetConfig(12)
+		return config12["workchains"]["root"]["node"]["value"]
 
 	def GetTotalValidators(self):
 		self.local.add_log("start GetTotalValidators function", "debug")
@@ -1180,7 +1183,7 @@ class MyTonCore():
 		if bounceable == False and destAccount.status == "active":
 			flags += ["--force-bounce"]
 			text = "Find non-bounceable flag, but destination account already active. Using bounceable flag"
-			self.local.AddLog(text, "warning")
+			self.local.add_log(text, "warning")
 		elif "-n" not in flags and bounceable == True and destAccount.status != "active":
 			raise Exception("Find bounceable flag, but destination account is not active. Use non-bounceable address or flag -n")
 		#end if
@@ -1706,10 +1709,10 @@ class MyTonCore():
 		subwallet_default = 698983191 + workchain # 0x29A9A317 + workchain
 		subwallet = kwargs.get("subwallet", subwallet_default)
 		version = kwargs.get("version", "hv1")
-		self.local.AddLog("start CreateHighWallet function", "debug")
+		self.local.add_log("start CreateHighWallet function", "debug")
 		wallet_path = self.walletsDir + name
 		if os.path.isfile(wallet_path + ".pk") and os.path.isfile(wallet_path + str(subwallet) + ".addr"):
-			self.local.AddLog("CreateHighWallet error: Wallet already exists: " + name + str(subwallet), "warning")
+			self.local.add_log("CreateHighWallet error: Wallet already exists: " + name + str(subwallet), "warning")
 		else:
 			args = ["new-highload-wallet.fif", workchain, subwallet, wallet_path]
 			result = self.fift.Run(args)
@@ -3167,7 +3170,7 @@ class MyTonCore():
 	def enable_mode(self, name):
 		if name not in MODES:
 			raise Exception(f'Unknown module name: {name}. Available modes: {", ".join(MODES)}')
-		self.check_enable_mode(name)
+		MODES[name].check_enable(self)
 		current_modes = self.get_modes()
 		current_modes[name] = True
 		self.local.save()
@@ -3176,6 +3179,7 @@ class MyTonCore():
 		current_modes = self.get_modes()
 		if name not in current_modes:
 			raise Exception(f'Unknown module name: {name}. Available modes: {", ".join(MODES)}')
+		MODES[name](self, self.local).check_disable()
 		current_modes[name] = False
 		self.local.save()
 
@@ -3202,6 +3206,17 @@ class MyTonCore():
 
 	def using_liteserver(self):
 		return self.get_mode_value('liteserver')
+
+	def using_collator(self):
+		return self.get_mode_value('collator')
+
+	def get_node_mode(self):
+		if self.using_validator():
+			return 'VALIDATOR'
+		elif self.using_liteserver():
+			return 'LITESERVER'
+		elif self.using_collator():
+			return 'COLLATOR'
 
 	def using_alert_bot(self):
 		return self.get_mode_value('alert-bot')
