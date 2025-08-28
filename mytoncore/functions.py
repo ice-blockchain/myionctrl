@@ -97,6 +97,9 @@ def enable_mode(local, event_name: str):
 def enable_btc_teleport(local):
     local.add_log("start enable_btc_teleport function", "debug")
     ton = MyTonCore(local)
+    if not ton.using_validator():
+        local.add_log("Skip installing BTC Teleport as node is not a validator", "info")
+        return
     from modules.btc_teleport import BtcTeleportModule
     BtcTeleportModule(ton, local).init(reinstall=True)
 
