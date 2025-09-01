@@ -102,13 +102,13 @@ echo "https://github.com/${author}/${repo}.git -> ${branch}"
 # remove previous installation
 cd $SOURCES_DIR
 rm -rf $SOURCES_DIR/myionctrl
-pip3 uninstall -y myionctrl
+pip3 uninstall -y myionctrl --break-system-packages
 
 git clone --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
 git config --global --add safe.directory $SOURCES_DIR/${repo}
 cd $SOURCES_DIR/${repo}
 
-pip3 install -U .  # TODO: make installation from git directly
+pip3 install -U .  --break-system-packages # TODO: make installation from git directly
 
 echo -e "${COLOR}[4/5]${ENDC} Running myioninstaller"
 # DEBUG
