@@ -87,7 +87,7 @@ else
 fi
 
 # Установка компонентов python3
-pip3 install psutil crc16 requests
+pip3 install psutil crc16 requests --break-system-packages
 
 # build openssl 3.0
 echo -e "${COLOR}[2/6]${ENDC} Building OpenSSL 3.0"
