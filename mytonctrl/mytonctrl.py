@@ -345,8 +345,15 @@ def Upgrade(local, ton, args: list):
 			branch = args[args.index('--btc-teleport') + 1]
 		upgrade_btc_teleport(local, ton, reinstall=True, branch=branch, user=user)
 		return
-	repo = "ton"
-	author, repo, branch = check_git(args, repo, "upgrade")
+
+	git_url = None
+
+	if '--url' in args and '--branch' in args:
+		git_url = args[args.index('--url') + 1]
+		branch = args[args.index('--branch') + 1]
+	else:
+		repo = "ton"
+		author, repo, branch = check_git(args, repo, "upgrade")
 
 	# bugfix if the files are in the wrong place
 	liteClient = ton.GetSettings("liteClient")
@@ -376,7 +383,11 @@ def Upgrade(local, ton, args: list):
 
 	# Run script
 	upgrade_script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/upgrade.sh')
-	runArgs = ["bash", upgrade_script_path, "-a", author, "-r", repo, "-b", branch]
+	if git_url:
+		runArgs = ["bash", upgrade_script_path, "-g", git_url, "-b", branch]
+	else:
+		runArgs = ["bash", upgrade_script_path, "-a", author, "-r", repo, "-b", branch]
+
 	exitCode = run_as_root(runArgs)
 	if ton.using_validator():
 		upgrade_btc_teleport(local, ton)
