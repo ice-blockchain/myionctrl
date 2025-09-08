@@ -102,7 +102,7 @@ echo "https://github.com/${author}/${repo}.git -> ${branch}"
 # remove previous installation
 cd $SOURCES_DIR
 rm -rf $SOURCES_DIR/myionctrl
-pip3 uninstall -y myionctrl --break-system-packages --ignore-installed
+pip3 uninstall -y myionctrl --break-system-packages
 
 git clone --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
 git config --global --add safe.directory $SOURCES_DIR/${repo}
