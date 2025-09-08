@@ -27,17 +27,8 @@ do
 done
 
 remote_url="https://github.com/${author}/${repo}.git"
-if [ -n "$git_url" ]; then
-  if [[ "$git_url" == *"#"* ]]; then
-    remote_url="${git_url%%#*}"
-    ref_from_url="${git_url##*#}"
-
-    if [ "$branch" = "master" ]; then
-      branch="$ref_from_url"
-    fi
-  else
-    remote_url="$git_url"
-  fi
+if [ -n "${git_url}" ]; then
+  remote_url="${git_url}"
 fi
 
 # Цвета

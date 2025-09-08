@@ -18,6 +18,7 @@ branch="master"
 network="mainnet"
 ton_node_version="master"  # Default version
 ton_node_git_url="https://github.com/ton-blockchain/ton.git"
+config_overridden=false
 
 show_help_and_exit() {
     echo 'Supported arguments:'

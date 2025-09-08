@@ -46,7 +46,7 @@ from mytoncore.functions import (
 from mytoncore.telemetry import is_host_virtual
 from mytonctrl.migrate import run_migrations
 from mytonctrl.utils import GetItemFromList, timestamp2utcdatetime, fix_git_config, is_hex, GetColorInt, \
-	pop_user_from_args
+	pop_user_from_args, pop_arg_from_args
 
 import sys, getopt, os
 
@@ -280,7 +280,22 @@ def check_git(input_args, default_repo, text, default_branch='master'):
 	fix_git_config(git_path)
 	default_author = "ton-blockchain"
 
-	# Get author, repo, branch
+	branch = pop_arg_from_args(input_args, '--branch')
+
+	if '--url' in input_args:
+		git_url = pop_arg_from_args(input_args, '--url')
+		if branch is None:
+			if '#' in git_url:
+				ref_fragment = git_url.rsplit('#', 1)[1]
+				if not ref_fragment:
+					raise Exception("--url fragment after # is empty")
+				branch = ref_fragment
+			else:
+				branch = default_branch
+		if '#' in git_url:
+			git_url = git_url.split('#', 1)[0]
+		return None, None, branch, git_url
+
 	local_author, local_repo = get_git_author_and_repo(git_path)
 	local_branch = get_git_branch(git_path)
 
@@ -288,7 +303,7 @@ def check_git(input_args, default_repo, text, default_branch='master'):
 	data = GetAuthorRepoBranchFromArgs(input_args)
 	need_author = data.get("author")
 	need_repo = data.get("repo")
-	need_branch = data.get("branch")
+	need_branch = data.get("branch") or branch
 
 	# Check if remote repo is different from default
 	if ((need_author is None and local_author != default_author) or
@@ -306,7 +321,7 @@ def check_git(input_args, default_repo, text, default_branch='master'):
 	if need_branch is None:
 		need_branch = local_branch
 	check_branch_exists(need_author, need_repo, need_branch)
-	return need_author, need_repo, need_branch
+	return need_author, need_repo, need_branch, None
 #end define
 
 def check_branch_exists(author, repo, branch):
@@ -323,8 +338,7 @@ def check_branch_exists(author, repo, branch):
 
 def Update(local, args):
 	repo = "mytonctrl"
-	author, repo, branch = check_git(args, repo, "update")
-
+	author, repo, branch, _ = check_git(args, repo, "update")  # todo: implement --url for update
 	# Run script
 	update_script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/update.sh')
 	runArgs = ["bash", update_script_path, "-a", author, "-r", repo, "-b", branch]
@@ -346,14 +360,7 @@ def Upgrade(local, ton, args: list):
 		upgrade_btc_teleport(local, ton, reinstall=True, branch=branch, user=user)
 		return
 
-	git_url = None
-
-	if '--url' in args and '--branch' in args:
-		git_url = args[args.index('--url') + 1]
-		branch = args[args.index('--branch') + 1]
-	else:
-		repo = "ton"
-		author, repo, branch = check_git(args, repo, "upgrade")
+	author, repo, branch, git_url = check_git(args, default_repo="ton", text="upgrade")
 
 	# bugfix if the files are in the wrong place
 	liteClient = ton.GetSettings("liteClient")
