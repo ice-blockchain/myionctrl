@@ -8,8 +8,11 @@ if [ "$(id -u)" != "0" ]; then
 	exit 1
 fi
 
-while getopts ":c:v:h" flag; do
+repo_git_url="https://github.com/ton-blockchain/ton.git"
+
+while getopts ":c:v:g:h" flag; do
     case "${flag}" in
+        g) repo_git_url=${OPTARG};;
         c) config=${OPTARG};;
         v) ton_node_version=${OPTARG};;
         h) show_help_and_exit;;
@@ -108,7 +111,7 @@ make build_libs -j$(nproc)
 echo -e "${COLOR}[3/6]${ENDC} Preparing for compilation"
 cd $SOURCES_DIR
 rm -rf $SOURCES_DIR/ton
-git clone --recursive https://github.com/ton-blockchain/ton.git
+git clone --recursive $repo_git_url $SOURCES_DIR/ton
 
 echo "checkout to ${ton_node_version}"
 
