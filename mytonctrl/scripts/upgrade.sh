@@ -16,14 +16,20 @@ bindir="/usr/bin/"
 tmpdir="/tmp/ton_src/"
 
 # Get arguments
-while getopts a:r:b: flag
+while getopts a:r:b:g: flag
 do
 	case "${flag}" in
 		a) author=${OPTARG};;
 		r) repo=${OPTARG};;
 		b) branch=${OPTARG};;
+    g) git_url=${OPTARG};;
 	esac
 done
+
+remote_url="https://github.com/${author}/${repo}.git"
+if [ -n "${git_url}" ]; then
+  remote_url="${git_url}"
+fi
 
 # Цвета
 COLOR='\033[92m'
@@ -63,8 +69,8 @@ fi
 rm -rf ${tmpdir}/${repo}
 mkdir -p ${tmpdir}/${repo}
 cd ${tmpdir}/${repo}
-echo "https://github.com/${author}/${repo}.git -> ${branch}"
-git clone --recursive https://github.com/${author}/${repo}.git . || exit 1
+echo "${remote_url} -> ${branch}"
+git clone --recursive ${remote_url} . || exit 1
 
 # Go to work dir
 cd ${srcdir}/${repo}

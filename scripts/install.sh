@@ -17,7 +17,8 @@ repo="mytonctrl"
 branch="master"
 network="mainnet"
 ton_node_version="master"  # Default version
-
+ton_node_git_url="https://github.com/ton-blockchain/ton.git"
+config_overridden=false
 
 show_help_and_exit() {
     echo 'Supported arguments:'
@@ -28,6 +29,7 @@ show_help_and_exit() {
     echo ' -a               Set MyTonCtrl git repo author'
     echo ' -r               Set MyTonCtrl git repo'
     echo ' -b               Set MyTonCtrl git repo branch'
+    echo ' -g  URL          TON node git repo URL (default: https://github.com/ton-blockchain/ton.git)'
     echo ' -m  MODE         Install MyTonCtrl with specified mode (validator or liteserver)'
     echo ' -n  NETWORK      Specify the network (mainnet or testnet)'
     echo ' -v  VERSION      Specify the ton node version (commit, branch, or tag)'
@@ -55,14 +57,15 @@ mode=none
 cpu_required=16
 mem_required=64000000  # 64GB in KB
 
-while getopts ":c:tidola:r:b:m:n:v:u:p:h" flag; do
+while getopts ":c:tidola:r:b:m:n:v:u:p:g:h" flag; do
     case "${flag}" in
-        c) config=${OPTARG};;
+        c) config=${OPTARG}; config_overridden=true;;
         t) telemetry=false;;
         i) ignore=true;;
         d) dump=true;;
         a) author=${OPTARG};;
         r) repo=${OPTARG};;
+        g) ton_node_git_url=${OPTARG};;
         b) branch=${OPTARG};;
         m) mode=${OPTARG};;
         n) network=${OPTARG};;
@@ -100,7 +103,10 @@ fi
 
 # Set config based on network argument
 if [ "${network}" = "testnet" ]; then
-    config="https://ton-blockchain.github.io/testnet-global.config.json"
+    if [ "${config_overridden}" = false ]; then
+        config="https://ton-blockchain.github.io/testnet-global.config.json"
+    fi
+
     cpu_required=8
     mem_required=16000000  # 16GB in KB
 fi
@@ -144,7 +150,7 @@ file3=${BIN_DIR}/ton/validator-engine-console/validator-engine-console
 if  [ ! -f "${file1}" ] || [ ! -f "${file2}" ] || [ ! -f "${file3}" ]; then
     echo "TON does not exists, building"
     wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/ton_installer.sh -O /tmp/ton_installer.sh
-    bash /tmp/ton_installer.sh -c ${config} -v ${ton_node_version}
+    bash /tmp/ton_installer.sh -c ${config} -g ${ton_node_git_url} -v ${ton_node_version}
 fi
 
 # Cloning mytonctrl
