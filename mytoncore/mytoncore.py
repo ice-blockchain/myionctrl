@@ -13,6 +13,7 @@ from fastcrc import crc16
 
 from modules import MODES
 from modules.btc_teleport import BtcTeleportModule
+from mytoncore import b642hex
 from mytoncore.utils import xhex2hex, ng2g
 from mytoncore.liteclient import LiteClient
 from mytoncore.validator_console import ValidatorConsole
@@ -1456,6 +1457,7 @@ class MyTonCore():
 
 		# Create keys
 		validatorKey = self.GetValidatorKeyByTime(startWorkTime, endWorkTime)
+		self.AddKeyToTemp(validatorKey, endWorkTime) # add one more time to ensure it is in temp keys
 		validatorPubkey_b64  = self.GetPubKeyBase64(validatorKey)
 
 		# Attach ADNL addr to validator
