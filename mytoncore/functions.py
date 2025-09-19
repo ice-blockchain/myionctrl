@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf_8 -*-l
+import datetime
 import os
 import sys
 import psutil
@@ -9,6 +10,7 @@ import base64
 import requests
 import subprocess
 
+from mypylib import MyPyClass
 from mytoncore.mytoncore import MyTonCore
 from mytonctrl.utils import fix_git_config
 from mytoninstaller.config import GetConfig
@@ -667,6 +669,32 @@ def gc_import(local, ton):
     local.add_log(f"Removed {removed} import files up to {node_seqno} seqno", "debug")
 
 
+def backup_mytoncore_logs(local: MyPyClass, ton: MyTonCore):
+    logs_path = os.path.join(ton.tempDir, 'old_logs')
+    os.makedirs(logs_path, exist_ok=True)
+    for file in os.listdir(logs_path):
+        file_path = os.path.join(logs_path, file)
+        if time.time() - os.path.getmtime(file_path) < 3600:  # check that last file was created not less than an hour ago
+            return
+    now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    log_backup_tmp_path = os.path.join(logs_path, 'mytoncore_log_' + now + '.log')
+    subprocess.run(["cp", local.buffer.log_file_name, log_backup_tmp_path])
+    ton.clear_dir(logs_path)
+
+
+def check_mytoncore_db(local: MyPyClass, ton: MyTonCore):
+    try:
+        local.read_db(local.buffer.db_path)
+        backup_path = local.buffer.db_path + ".backup"
+        if not os.path.isfile(backup_path) or time.time() - os.path.getmtime(backup_path) > 3600*6:
+            ton.create_self_db_backup()
+        return
+    except Exception as e:
+        print(f'Failed to read mytoncore db: {e}')
+        local.add_log(f"Failed to read mytoncore db: {e}", "error")
+    ton.CheckConfigFile(None, None)  # get mytoncore db from backup
+
+
 def General(local):
     local.add_log("start General function", "debug")
     ton = MyTonCore(local)
@@ -677,6 +705,9 @@ def General(local):
     local.start_cycle(Statistics, sec=10, args=(local, ))
     local.start_cycle(Telemetry, sec=60, args=(local, ton, ))
     local.start_cycle(OverlayTelemetry, sec=7200, args=(local, ton, ))
+    local.start_cycle(backup_mytoncore_logs, sec=3600*4, args=(local, ton, ))
+    local.start_cycle(check_mytoncore_db, sec=600, args=(local, ton, ))
+
     if local.db.get("onlyNode"):  # mytoncore service works only for telemetry
         thr_sleep()
         return

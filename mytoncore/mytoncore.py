@@ -1456,6 +1456,7 @@ class MyTonCore():
 
 		# Create keys
 		validatorKey = self.GetValidatorKeyByTime(startWorkTime, endWorkTime)
+		self.AddKeyToTemp(validatorKey, endWorkTime) # add one more time to ensure it is in temp keys
 		validatorPubkey_b64  = self.GetPubKeyBase64(validatorKey)
 
 		# Attach ADNL addr to validator
