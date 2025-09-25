@@ -51,8 +51,9 @@ def Init(local, console):
 	# create variables
 	local.buffer.user = get_current_user()
 	local.buffer.vuser = "validator"
-	local.buffer.cport = random.randint(2000, 65000)
-	local.buffer.lport = random.randint(2000, 65000)
+	local.buffer.cport = int(os.getenv('VALIDATOR_CONSOLE_PORT', random.randint(2000, 65000)))
+	local.buffer.lport = int(os.getenv('LITESERVER_PORT', random.randint(2000, 65000)))
+	local.buffer.vport = int(os.getenv('VALIDATOR_PORT', random.randint(2000, 65000)))
 
 	# this funciton injects MyPyClass instance
 	def inject_globals(func):
