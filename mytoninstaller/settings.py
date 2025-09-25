@@ -224,7 +224,7 @@ def download_archive_from_ts(local):
 	block_bags = []
 	master_block_bags = []
 
-	blocks_config = requests.get(url).json()
+	blocks_config = requests.get(url, timeout=3).json()
 	for state in blocks_config['states']:
 		if state['at_block'] > block_from:
 			break

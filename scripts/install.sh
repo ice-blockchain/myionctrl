@@ -95,7 +95,7 @@ if [ "${mode}" = "none" ] && [ "$backup" = "none" ]; then  # no mode or backup w
         echo "pip not found. Installing pip..."
         python3 -m pip install --upgrade pip
     fi
-    pip3 install questionary==2.1.0 --break-system-packages
+    pip3 install questionary==2.1.1 --break-system-packages
     python3 install.py "$@"
     pip3 uninstall questionary -y
     exit

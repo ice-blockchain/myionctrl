@@ -120,7 +120,8 @@ def run_cli():
     if mode == "liteserver":
         archive_blocks = questionary.text(
             "Do you want to download archive blocks via TON Storage? Press Enter to skip.\n"
-            "If yes, provide block seqno or date to start from and (optionally) block seqno or date to end with (send `1` to download all blocks and setup full archive node).\n"
+            "If yes, provide block seqno or date to start from and (optionally) block seqno or date to end with\n"
+            "(send `1` to download all blocks and setup full archive node).\n"
             "Examples: `30850000`, `10000000 10200000`, `2025-01-01`, `2025-01-01 2025-01-30`",
             validate=validate_archive_blocks
         ).unsafe_ask()
