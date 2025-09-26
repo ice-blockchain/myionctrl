@@ -47,13 +47,13 @@ def FirstNodeSettings(local):
 	vconfig_path = local.buffer.vconfig_path
 	vport = local.buffer.vport
 
-	if os.getenv('ARCHIVE_TTL'):
-		archive_ttl = int(os.getenv('ARCHIVE_TTL'))
+	if local.buffer.archive_ttl is not None:
+		archive_ttl = int(local.buffer.archive_ttl)
 	else:
 		archive_ttl = 2592000 if local.buffer.mode == 'liteserver' else 86400
 	state_ttl = None
-	if os.getenv('STATE_TTL'):
-		state_ttl = int(os.getenv('STATE_TTL'))
+	if local.buffer.state_ttl is not None:
+		state_ttl = int(local.buffer.state_ttl)
 		archive_ttl -= state_ttl
 	if archive_ttl == 0:
 		archive_ttl = 1  # todo: remove this when archive_ttl==0 will be allowed in node
@@ -93,16 +93,16 @@ def FirstNodeSettings(local):
 	cmd = f"{validatorAppPath} --threads {cpus} --daemonize --global-config {globalConfigPath} --db {ton_db_dir} --logname {tonLogPath} --verbosity 1"
 	cmd += ttl_cmd
 
-	if os.getenv('ADD_SHARD'):
-		add_shard = os.getenv('ADD_SHARD')
+	if local.buffer.add_shard is not None:
+		add_shard = local.buffer.add_shard
 		cmd += f' -M'
 		for shard in add_shard.split():
 			cmd += f' --add-shard {shard}'
 
 	add2systemd(name="validator", user=vuser, start=cmd, pre='/bin/sleep 2') # post="/usr/bin/python3 /usr/src/mytonctrl/mytoncore.py -e \"validator down\""
 
-	if os.getenv('PUBLIC_IP'):
-		ip = os.getenv('PUBLIC_IP')
+	if local.buffer.public_ip is not None:
+		ip = local.buffer.public_ip
 	else:
 		ip = get_own_ip()
 	addr = "{ip}:{vport}".format(ip=ip, vport=vport)
@@ -204,13 +204,13 @@ def parse_block_value(local, block: str):
 
 
 def download_archive_from_ts(local):
-	archive_blocks = os.getenv('ARCHIVE_BLOCKS')
+	if local.buffer.archive_blocks is None:
+		return
+	archive_blocks = local.buffer.archive_blocks
 	downloads_path = '/var/ton-work/ts-downloads/'
 	os.makedirs(downloads_path, exist_ok=True)
 	subprocess.run(["chmod", "o+wx", downloads_path])
 
-	if archive_blocks is None:
-		return
 	block_from, block_to = archive_blocks, None
 	if len(archive_blocks.split()) > 1:
 		block_from, block_to = archive_blocks.split()
@@ -1189,7 +1189,7 @@ def SetInitialSync(local):
 def SetupCollator(local):
 	if local.buffer.mode != "collator":
 		return
-	shards = os.getenv('COLLATE_SHARD', '').split()
+	shards = local.buffer.collate_shard.split()
 	if not shards:
 		shards = ['0:8000000000000000']
 	local.add_log(f"Setting up collator for shards: {shards}", "info")

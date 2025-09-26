@@ -40,6 +40,18 @@ from mytoninstaller.config import (
 from functools import partial
 
 
+def init_envs(local):
+	local.buffer.cport = int(os.getenv('VALIDATOR_CONSOLE_PORT', random.randint(2000, 65000)))
+	local.buffer.lport = int(os.getenv('LITESERVER_PORT', random.randint(2000, 65000)))
+	local.buffer.vport = int(os.getenv('VALIDATOR_PORT', random.randint(2000, 65000)))
+	local.buffer.archive_ttl = os.getenv('ARCHIVE_TTL')
+	local.buffer.state_ttl = os.getenv('STATE_TTL')
+	local.buffer.public_ip = os.getenv('PUBLIC_IP')
+	local.buffer.add_shard = os.getenv('ADD_SHARD')
+	local.buffer.archive_blocks = os.getenv('ARCHIVE_BLOCKS')
+	local.buffer.collate_shard = os.getenv('COLLATE_SHARD', '')
+
+
 def Init(local, console):
 	local.db.config.isStartOnlyOneProcess = False
 	local.db.config.logLevel = "debug"
@@ -51,9 +63,7 @@ def Init(local, console):
 	# create variables
 	local.buffer.user = get_current_user()
 	local.buffer.vuser = "validator"
-	local.buffer.cport = int(os.getenv('VALIDATOR_CONSOLE_PORT', random.randint(2000, 65000)))
-	local.buffer.lport = int(os.getenv('LITESERVER_PORT', random.randint(2000, 65000)))
-	local.buffer.vport = int(os.getenv('VALIDATOR_PORT', random.randint(2000, 65000)))
+	init_envs(local)
 
 	# this funciton injects MyPyClass instance
 	def inject_globals(func):

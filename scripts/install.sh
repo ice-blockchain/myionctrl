@@ -23,6 +23,7 @@ config_overridden=false
 show_help_and_exit() {
     echo 'Supported arguments:'
     echo ' -c, --config  URL             Provide custom network config'
+    echo ' -e, --env-file  PATH          Provide env file with installation parameters'
     echo ' -t, --telemetry               Disable telemetry'
     echo ' -i, --ignore-reqs             Ignore minimum requirements'
     echo ' -d, --dump                    Use pre-packaged dump. Reduces duration of initial synchronization.'
@@ -47,6 +48,7 @@ fi
 
 # node install parameters
 config="https://ton-blockchain.github.io/global.config.json"
+env_file=""
 telemetry=true
 ignore=false
 dump=false
@@ -77,7 +79,7 @@ while (($#)); do
     --ignore-reqs)  newargv+=(-i) ;;
 
     # with arg
-    --config|--author|--repo|--branch|--mode|--network|--node-repo|--backup|--user)
+    --config|--author|--repo|--branch|--mode|--network|--node-repo|--backup|--user|--node-version|--env-file)
       if (($# < 2)); then
         echo "Error: option $1 requires value" >&2; exit 2
       fi
@@ -92,6 +94,7 @@ while (($#)); do
         --backup)       newargv+=(-p "$2") ;;
         --user)         newargv+=(-u "$2") ;;
         --node-version) newargv+=(-v "$2") ;;
+        --env-file)     newargv+=(-e "$2") ;;
       esac
       shift ;;
     --*)
@@ -106,7 +109,7 @@ done
 #printf '\n'
 set -- "${newargv[@]}"
 
-while getopts ":c:tidola:r:b:m:n:v:u:p:g:h" flag; do
+while getopts ":c:tidola:r:b:m:n:v:u:p:g:e:h" flag; do
     case "${flag}" in
         c) config=${OPTARG}; config_overridden=true;;
         t) telemetry=false;;
@@ -123,6 +126,7 @@ while getopts ":c:tidola:r:b:m:n:v:u:p:g:h" flag; do
         o) only_mtc=true;;
         l) only_node=true;;
         p) backup=${OPTARG};;
+        e) env_file=${OPTARG};;
         h) show_help_and_exit;;
         *)
             echo "Flag -${flag} is not recognized. Aborting"
@@ -130,6 +134,15 @@ while getopts ":c:tidola:r:b:m:n:v:u:p:g:h" flag; do
     esac
 done
 
+if [ -n "$env_file" ]; then
+  if [ ! -f "$env_file" ]; then
+    echo "Env file not found, aborting."
+    exit 1
+  fi
+  set -a
+  source "$env_file"
+  set +a
+fi
 
 if [ "$only_mtc" = true ] && [ "$backup" = "none" ]; then
     echo "Backup file must be provided if only mtc installation"
