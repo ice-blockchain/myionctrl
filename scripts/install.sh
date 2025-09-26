@@ -22,22 +22,22 @@ config_overridden=false
 
 show_help_and_exit() {
     echo 'Supported arguments:'
-    echo ' -c  PATH         Provide custom config for toninstaller.sh'
-    echo ' -t               Disable telemetry'
-    echo ' -i               Ignore minimum requirements'
-    echo ' -d               Use pre-packaged dump. Reduces duration of initial synchronization.'
-    echo ' -a               Set MyTonCtrl git repo author'
-    echo ' -r               Set MyTonCtrl git repo'
-    echo ' -b               Set MyTonCtrl git repo branch'
-    echo ' -g  URL          TON node git repo URL (default: https://github.com/ton-blockchain/ton.git)'
-    echo ' -m  MODE         Install MyTonCtrl with specified mode (validator or liteserver)'
-    echo ' -n  NETWORK      Specify the network (mainnet or testnet)'
-    echo ' -v  VERSION      Specify the ton node version (commit, branch, or tag)'
-    echo ' -u  USER         Specify the user to be used for MyTonCtrl installation'
-    echo ' -p  PATH         Provide backup file for MyTonCtrl installation'
-    echo ' -o               Install only MyTonCtrl. Must be used with -p'
-    echo ' -l               Install only TON node'
-    echo ' -h               Show this help'
+    echo ' -c, --config  URL             Provide custom network config'
+    echo ' -t, --telemetry               Disable telemetry'
+    echo ' -i, --ignore-reqs             Ignore minimum requirements'
+    echo ' -d, --dump                    Use pre-packaged dump. Reduces duration of initial synchronization.'
+    echo ' -a, --author                  Set MyTonCtrl git repo author'
+    echo ' -r, --repo                    Set MyTonCtrl git repo name'
+    echo ' -b, --branch                  Set MyTonCtrl git repo branch'
+    echo ' -m, --mode  MODE              Install MyTonCtrl with specified mode (validator or liteserver)'
+    echo ' -n, --network  NETWORK        Specify the network (mainnet or testnet)'
+    echo ' -g, --node-repo  URL          TON node git repo URL (default: https://github.com/ton-blockchain/ton.git)'
+    echo ' -v, --node-version  VERSION   Specify the TON node version (commit, branch, or tag)'
+    echo ' -u, --user  USER              Specify the user to be used for MyTonCtrl installation'
+    echo ' -p, --backup  PATH            Provide backup file for MyTonCtrl installation'
+    echo ' -o, --only-mtc                Install only MyTonCtrl. Must be used with -p'
+    echo ' -l, --only-node               Install only TON node'
+    echo ' -h, --help                    Show this help'
     exit
 }
 
@@ -56,6 +56,55 @@ backup=none
 mode=none
 cpu_required=16
 mem_required=64000000  # 64GB in KB
+
+# transform --long options to short, because getopts only supports short ones
+
+newargv=()
+while (($#)); do
+  case "$1" in
+    --) # end of options
+      shift
+      newargv+=( -- "$@" )
+      break
+      ;;
+
+    # no arg
+    --dump)         newargv+=(-d) ;;
+    --only-mtc)     newargv+=(-o) ;;
+    --only-node)    newargv+=(-l) ;;
+    --help)         newargv+=(-h) ;;
+    --telemetry)    newargv+=(-t) ;;
+    --ignore-reqs)  newargv+=(-i) ;;
+
+    # with arg
+    --config|--author|--repo|--branch|--mode|--network|--node-repo|--backup|--user)
+      if (($# < 2)); then
+        echo "Error: option $1 requires value" >&2; exit 2
+      fi
+      case "$1" in
+        --config)       newargv+=(-c "$2") ;;
+        --author)       newargv+=(-a "$2") ;;
+        --repo)         newargv+=(-r "$2") ;;
+        --branch)       newargv+=(-b "$2") ;;
+        --mode)         newargv+=(-m "$2") ;;
+        --network)      newargv+=(-n "$2") ;;
+        --node-repo)    newargv+=(-g "$2") ;;
+        --backup)       newargv+=(-p "$2") ;;
+        --user)         newargv+=(-u "$2") ;;
+        --node-version) newargv+=(-v "$2") ;;
+      esac
+      shift ;;
+    --*)
+      echo "Error: unknown option '$1'" >&2; exit 2 ;;
+    *)
+      newargv+=("$1") ;;
+  esac
+  shift
+done
+
+#printf ' %q' "${newargv[@]}"
+#printf '\n'
+set -- "${newargv[@]}"
 
 while getopts ":c:tidola:r:b:m:n:v:u:p:g:h" flag; do
     case "${flag}" in
