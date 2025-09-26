@@ -24,13 +24,14 @@ show_help_and_exit() {
     echo 'Supported arguments:'
     echo ' -c, --config  URL             Provide custom network config'
     echo ' -e, --env-file  PATH          Provide env file with installation parameters'
+    echo ' --print-env                   Print result command and envs after interactive installer without installing MyTonCtrl'
     echo ' -t, --telemetry               Disable telemetry'
     echo ' -i, --ignore-reqs             Ignore minimum requirements'
-    echo ' -d, --dump                    Use pre-packaged dump. Reduces duration of initial synchronization.'
+    echo ' -d, --dump                    Use pre-packaged dump. Reduces duration of initial synchronization'
     echo ' -a, --author                  Set MyTonCtrl git repo author'
     echo ' -r, --repo                    Set MyTonCtrl git repo name'
     echo ' -b, --branch                  Set MyTonCtrl git repo branch'
-    echo ' -m, --mode  MODE              Install MyTonCtrl with specified mode (validator or liteserver)'
+    echo ' -m, --mode  MODE              Install MyTonCtrl with specified mode (validator or liteserver). Leave empty to launch interactive installer'
     echo ' -n, --network  NETWORK        Specify the network (mainnet or testnet)'
     echo ' -g, --node-repo  URL          TON node git repo URL (default: https://github.com/ton-blockchain/ton.git)'
     echo ' -v, --node-version  VERSION   Specify the TON node version (commit, branch, or tag)'
@@ -77,6 +78,7 @@ while (($#)); do
     --help)         newargv+=(-h) ;;
     --telemetry)    newargv+=(-t) ;;
     --ignore-reqs)  newargv+=(-i) ;;
+    --print-env)    export PRINT_ENV=true ;;
 
     # with arg
     --config|--author|--repo|--branch|--mode|--network|--node-repo|--backup|--user|--node-version|--env-file)

@@ -211,15 +211,15 @@ def run_install(answers: dict):
         args += f' -c {config}'
 
     if archive_ttl:
-        os.environ['ARCHIVE_TTL'] = archive_ttl  # set env variable
+        CONFIG['ARCHIVE_TTL'] = archive_ttl  # set env variable
     if state_ttl:
-        os.environ['STATE_TTL'] = state_ttl
+        CONFIG['STATE_TTL'] = state_ttl
     if add_shard:
-        os.environ['ADD_SHARD'] = add_shard
+        CONFIG['ADD_SHARD'] = add_shard
     if collate_shard:
-        os.environ['COLLATE_SHARD'] = collate_shard
+        CONFIG['COLLATE_SHARD'] = collate_shard
     if archive_blocks:
-        os.environ['ARCHIVE_BLOCKS'] = archive_blocks
+        CONFIG['ARCHIVE_BLOCKS'] = archive_blocks
         command += ['-v', 'master']
 
     if validator_mode and validator_mode not in ('Skip', 'Validator wallet'):
@@ -239,7 +239,7 @@ def run_install(answers: dict):
     log = None
     stdin = None
     if background:
-        os.environ['PYTHONUNBUFFERED'] = '1'
+        CONFIG['PYTHONUNBUFFERED'] = '1'
         log = open("mytonctrl_installation.log", "a")
         stdin=subprocess.DEVNULL
         command = ['nohup'] + command
@@ -248,6 +248,19 @@ def run_install(answers: dict):
     command += run_args
 
     print(command)
+
+    if os.getenv('PRINT_ENV'):
+        print('command:')
+        print(' '.join(command))
+        print('envs:')
+        for k, v in CONFIG.items():
+            if ' ' in v:
+              v = f'"{v}"'
+            print(f'{k}={v}')
+        sys.exit(0)
+
+    for k, v in CONFIG.items():
+        os.environ[k] = v
 
     process = subprocess.Popen(
         command,
@@ -259,6 +272,9 @@ def run_install(answers: dict):
         process.wait()
     if background:
         print("="*100 + f"\nRunning installation in the background. Check './mytonctrl_installation.log' for progress. PID: {process.pid}\n" + "="*100)
+
+
+CONFIG = {}
 
 
 def main():
