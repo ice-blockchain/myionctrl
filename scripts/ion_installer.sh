@@ -1,4 +1,3 @@
-
 #!/bin/bash
 set -e
 
@@ -54,7 +53,6 @@ if [ "$OSTYPE" == "linux-gnu" ]; then
 		pacman -S --noconfirm curl git make cmake clang gflags zlib openssl readline libmicrohttpd python python-pip
 	elif [ -f /etc/debian_version ]; then
 		echo "Ubuntu/Debian Linux detected."
-		apt-get update
 		apt-get install -y build-essential curl git cmake clang libgflags-dev zlib1g-dev libssl-dev libreadline-dev libmicrohttpd-dev pkg-config libgsl-dev python3 python3-dev python3-pip libsecp256k1-dev libsodium-dev liblz4-dev libjemalloc-dev automake libtool
 
 		# Install ninja
@@ -91,16 +89,12 @@ else
 	exit 1
 fi
 
-# Установка компонентов python3
-pip3 install psutil==6.1.0 crc16==0.1.1 requests==2.32.3
-
-# build openssl 3.0
+# build openssl 3.0. NOTE: on Ubuntu 24.04 package libssl-dev from standard repo can be used
 echo -e "${COLOR}[2/6]${ENDC} Building OpenSSL 3.0"
 rm -rf $BIN_DIR/openssl_3
-git clone https://github.com/openssl/openssl $BIN_DIR/openssl_3
+git clone --depth 1 -b openssl-3.1.4 https://github.com/openssl/openssl $BIN_DIR/openssl_3
 cd $BIN_DIR/openssl_3
 opensslPath=`pwd`
-git checkout openssl-3.1.4
 ./config
 make build_libs -j$(nproc)
 
@@ -108,13 +102,13 @@ make build_libs -j$(nproc)
 echo -e "${COLOR}[3/6]${ENDC} Preparing for compilation"
 cd $SOURCES_DIR
 rm -rf $SOURCES_DIR/ion
-git clone --recursive https://github.com/ice-blockchain/ion.git
+git clone --depth 1 -b ${ion_node_version} --recursive --shallow-submodules https://github.com/ice-blockchain/ion.git
 
-echo "checkout to ${ion_node_version}"
+#echo "checkout to ${ion_node_version}"
 
 if [ "${ion_node_version}" != "master" ]; then
   cd $SOURCES_DIR/ion
-  git checkout ${ion_node_version}
+  #git checkout ${ion_node_version}
   cd ../
 fi
 

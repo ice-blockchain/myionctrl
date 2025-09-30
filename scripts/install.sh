@@ -88,15 +88,14 @@ fi
 if [ "${mode}" = "none" ] && [ "$backup" = "none" ]; then  # no mode or backup was provided
     echo "Running cli installer"
     wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/install.py
-    python3 -m pip install --upgrade pip
-    pip3 install inquirer==3.4.0 --break-system-packages
+    pip3 install --break-system-packages inquirer==3.4.0
     python3 install.py
     exit
 fi
 
 # Set config based on network argument
 if [ "${network}" = "testnet" ]; then
-    config="https://ice-blockchain.github.io/testnet-global.config.json"
+    config="https://cdn.ice.io/testnet/global.config.json"
     cpu_required=8
     mem_required=16000000  # 16GB in KB
 fi
@@ -124,16 +123,6 @@ if [[ "$OSTYPE" =~ darwin.* ]]; then
     mkdir -p ${SOURCES_DIR}
 fi
 
-
-if [ ! -f ~/.config/pip/pip.conf ]; then  # create pip config
-    mkdir -p ~/.config/pip
-cat > ~/.config/pip/pip.conf <<EOF
-[global]
-break-system-packages = true
-EOF
-fi
-
-
 # check ION components
 file1=${BIN_DIR}/ion/crypto/fift
 file2=${BIN_DIR}/ion/lite-client/lite-client
@@ -152,13 +141,14 @@ echo "https://github.com/${author}/${repo}.git -> ${branch}"
 # remove previous installation
 cd $SOURCES_DIR
 rm -rf $SOURCES_DIR/myionctrl
-pip3 uninstall -y myionctrl
+pip3 uninstall --break-system-packages myionctrl
+pip3 install --break-system-packages psutil==6.1.0 crc16==0.1.1 requests==2.32.3
 
-git clone --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
+git clone --depth 1 --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
 git config --global --add safe.directory $SOURCES_DIR/${repo}
 cd $SOURCES_DIR/${repo}
 
-pip3 install -U .  # TODO: make installation from git directly
+pip3 install --break-system-packages -U .  # TODO: make installation from git directly
 
 echo -e "${COLOR}[4/5]${ENDC} Running myioninstaller"
 # DEBUG
@@ -172,14 +162,6 @@ if [ "${user}" = "" ]; then  # no user
 fi
 echo "User: $user"
 python3 -m myioninstaller -u ${user} -t ${telemetry} --dump ${dump} -m ${mode} --only-mtc ${only_mtc} --backup ${backup} --only-node ${only_node}
-
-# set migrate version
-migrate_version=1
-version_dir="/home/${user}/.local/share/myionctrl"
-version_path="${version_dir}/VERSION"
-mkdir -p ${version_dir}
-echo ${migrate_version} > ${version_path}
-chown ${user}:${user} ${version_dir} ${version_path}
 
 # create symbolic link if branch not eq myionctrl
 if [ "${repo}" != "myionctrl" ]; then
