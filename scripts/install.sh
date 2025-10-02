@@ -151,7 +151,6 @@ cd $SOURCES_DIR/${repo}
 pip3 install --break-system-packages -U .  # TODO: make installation from git directly
 
 echo -e "${COLOR}[4/5]${ENDC} Running myioninstaller"
-# DEBUG
 
 if [ "${user}" = "" ]; then  # no user
     parent_name=$(ps -p $PPID -o comm=)

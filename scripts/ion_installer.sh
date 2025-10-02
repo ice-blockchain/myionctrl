@@ -104,14 +104,6 @@ cd $SOURCES_DIR
 rm -rf $SOURCES_DIR/ion
 git clone --depth 1 -b ${ion_node_version} --recursive --shallow-submodules https://github.com/ice-blockchain/ion.git
 
-#echo "checkout to ${ion_node_version}"
-
-if [ "${ion_node_version}" != "master" ]; then
-  cd $SOURCES_DIR/ion
-  #git checkout ${ion_node_version}
-  cd ../
-fi
-
 cd $SOURCES_DIR/ion
 git submodule sync --recursive
 git submodule update
