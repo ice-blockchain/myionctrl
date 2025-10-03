@@ -17,25 +17,29 @@ repo="mytonctrl"
 branch="master"
 network="mainnet"
 ton_node_version="master"  # Default version
-
+ton_node_git_url="https://github.com/ton-blockchain/ton.git"
+config_overridden=false
 
 show_help_and_exit() {
     echo 'Supported arguments:'
-    echo ' -c  PATH         Provide custom config for toninstaller.sh'
-    echo ' -t               Disable telemetry'
-    echo ' -i               Ignore minimum requirements'
-    echo ' -d               Use pre-packaged dump. Reduces duration of initial synchronization.'
-    echo ' -a               Set MyTonCtrl git repo author'
-    echo ' -r               Set MyTonCtrl git repo'
-    echo ' -b               Set MyTonCtrl git repo branch'
-    echo ' -m  MODE         Install MyTonCtrl with specified mode (validator or liteserver)'
-    echo ' -n  NETWORK      Specify the network (mainnet or testnet)'
-    echo ' -v  VERSION      Specify the ton node version (commit, branch, or tag)'
-    echo ' -u  USER         Specify the user to be used for MyTonCtrl installation'
-    echo ' -p  PATH         Provide backup file for MyTonCtrl installation'
-    echo ' -o               Install only MyTonCtrl. Must be used with -p'
-    echo ' -l               Install only TON node'
-    echo ' -h               Show this help'
+    echo ' -c, --config  URL             Provide custom network config'
+    echo ' -e, --env-file  PATH          Provide env file with installation parameters'
+    echo ' --print-env                   Print result command and envs after interactive installer without installing MyTonCtrl'
+    echo ' -t, --telemetry               Disable telemetry'
+    echo ' -i, --ignore-reqs             Ignore minimum requirements'
+    echo ' -d, --dump                    Use pre-packaged dump. Reduces duration of initial synchronization'
+    echo ' -a, --author                  Set MyTonCtrl git repo author'
+    echo ' -r, --repo                    Set MyTonCtrl git repo name'
+    echo ' -b, --branch                  Set MyTonCtrl git repo branch'
+    echo ' -m, --mode  MODE              Install MyTonCtrl with specified mode (validator or liteserver). Leave empty to launch interactive installer'
+    echo ' -n, --network  NETWORK        Specify the network (mainnet or testnet)'
+    echo ' -g, --node-repo  URL          TON node git repo URL (default: https://github.com/ton-blockchain/ton.git)'
+    echo ' -v, --node-version  VERSION   Specify the TON node version (commit, branch, or tag)'
+    echo ' -u, --user  USER              Specify the user to be used for MyTonCtrl installation'
+    echo ' -p, --backup  PATH            Provide backup file for MyTonCtrl installation'
+    echo ' -o, --only-mtc                Install only MyTonCtrl. Must be used with -p'
+    echo ' -l, --only-node               Install only TON node'
+    echo ' -h, --help                    Show this help'
     exit
 }
 
@@ -45,6 +49,7 @@ fi
 
 # node install parameters
 config="https://ton-blockchain.github.io/global.config.json"
+env_file=""
 telemetry=true
 ignore=false
 dump=false
@@ -55,14 +60,66 @@ mode=none
 cpu_required=16
 mem_required=64000000  # 64GB in KB
 
-while getopts ":c:tidola:r:b:m:n:v:u:p:h" flag; do
+# transform --long options to short, because getopts only supports short ones
+
+newargv=()
+while (($#)); do
+  case "$1" in
+    --) # end of options
+      shift
+      newargv+=( -- "$@" )
+      break
+      ;;
+
+    # no arg
+    --dump)         newargv+=(-d) ;;
+    --only-mtc)     newargv+=(-o) ;;
+    --only-node)    newargv+=(-l) ;;
+    --help)         newargv+=(-h) ;;
+    --telemetry)    newargv+=(-t) ;;
+    --ignore-reqs)  newargv+=(-i) ;;
+    --print-env)    export PRINT_ENV=true ;;
+
+    # with arg
+    --config|--author|--repo|--branch|--mode|--network|--node-repo|--backup|--user|--node-version|--env-file)
+      if (($# < 2)); then
+        echo "Error: option $1 requires value" >&2; exit 2
+      fi
+      case "$1" in
+        --config)       newargv+=(-c "$2") ;;
+        --author)       newargv+=(-a "$2") ;;
+        --repo)         newargv+=(-r "$2") ;;
+        --branch)       newargv+=(-b "$2") ;;
+        --mode)         newargv+=(-m "$2") ;;
+        --network)      newargv+=(-n "$2") ;;
+        --node-repo)    newargv+=(-g "$2") ;;
+        --backup)       newargv+=(-p "$2") ;;
+        --user)         newargv+=(-u "$2") ;;
+        --node-version) newargv+=(-v "$2") ;;
+        --env-file)     newargv+=(-e "$2") ;;
+      esac
+      shift ;;
+    --*)
+      echo "Error: unknown option '$1'" >&2; exit 2 ;;
+    *)
+      newargv+=("$1") ;;
+  esac
+  shift
+done
+
+#printf ' %q' "${newargv[@]}"
+#printf '\n'
+set -- "${newargv[@]}"
+
+while getopts ":c:tidola:r:b:m:n:v:u:p:g:e:h" flag; do
     case "${flag}" in
-        c) config=${OPTARG};;
+        c) config=${OPTARG}; config_overridden=true;;
         t) telemetry=false;;
         i) ignore=true;;
         d) dump=true;;
         a) author=${OPTARG};;
         r) repo=${OPTARG};;
+        g) ton_node_git_url=${OPTARG};;
         b) branch=${OPTARG};;
         m) mode=${OPTARG};;
         n) network=${OPTARG};;
@@ -71,6 +128,7 @@ while getopts ":c:tidola:r:b:m:n:v:u:p:h" flag; do
         o) only_mtc=true;;
         l) only_node=true;;
         p) backup=${OPTARG};;
+        e) env_file=${OPTARG};;
         h) show_help_and_exit;;
         *)
             echo "Flag -${flag} is not recognized. Aborting"
@@ -78,6 +136,15 @@ while getopts ":c:tidola:r:b:m:n:v:u:p:h" flag; do
     esac
 done
 
+if [ -n "$env_file" ]; then
+  if [ ! -f "$env_file" ]; then
+    echo "Env file not found, aborting."
+    exit 1
+  fi
+  set -a
+  source "$env_file"
+  set +a
+fi
 
 if [ "$only_mtc" = true ] && [ "$backup" = "none" ]; then
     echo "Backup file must be provided if only mtc installation"
@@ -92,7 +159,7 @@ if [ "${mode}" = "none" ] && [ "$backup" = "none" ]; then  # no mode or backup w
         echo "pip not found. Installing pip..."
         python3 -m pip install --upgrade pip
     fi
-    pip3 install questionary==2.1.0 --break-system-packages
+    pip3 install questionary==2.1.1 --break-system-packages
     python3 install.py "$@"
     pip3 uninstall questionary -y
     exit
@@ -100,7 +167,10 @@ fi
 
 # Set config based on network argument
 if [ "${network}" = "testnet" ]; then
-    config="https://ton-blockchain.github.io/testnet-global.config.json"
+    if [ "${config_overridden}" = false ]; then
+        config="https://ton-blockchain.github.io/testnet-global.config.json"
+    fi
+
     cpu_required=8
     mem_required=16000000  # 16GB in KB
 fi
@@ -144,7 +214,7 @@ file3=${BIN_DIR}/ton/validator-engine-console/validator-engine-console
 if  [ ! -f "${file1}" ] || [ ! -f "${file2}" ] || [ ! -f "${file3}" ]; then
     echo "TON does not exists, building"
     wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/ton_installer.sh -O /tmp/ton_installer.sh
-    bash /tmp/ton_installer.sh -c ${config} -v ${ton_node_version}
+    bash /tmp/ton_installer.sh -c ${config} -g ${ton_node_git_url} -v ${ton_node_version}
 fi
 
 # Cloning mytonctrl
