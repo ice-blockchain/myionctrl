@@ -5,15 +5,15 @@ import sys
 import time
 
 from mypylib.mypylib import bcolors, Sleep
-from mytoncore import MyTonCore
+from myioncore import MyIonCore
 from mypylib.mypylib import MyPyClass
 
 local = MyPyClass(__file__)
-ton = MyTonCore(local)
+ion = MyIonCore(local)
 
 def TestMoveCoins(wallet, dest, coins, **kwargs):
 	start = time.time()
-	ton.MoveCoins(wallet, dest, coins, timeout=600, **kwargs)
+	ion.MoveCoins(wallet, dest, coins, timeout=600, **kwargs)
 	end = time.time()
 	diff = int(end - start)
 	local.AddLog(f"{wallet.addrB64} -> {dest}, diff: {diff}")
@@ -21,13 +21,13 @@ def TestMoveCoins(wallet, dest, coins, **kwargs):
 
 def Init():
 	vnum = local.buffer.get("vnum")
-	wallet1 = ton.CreateWallet(f"test{vnum+1}", workchain=0, version="v1")
-	wallet2 = ton.CreateWallet(f"test{vnum+2}", workchain=0, version="v2")
-	wallet3 = ton.CreateWallet(f"test{vnum+3}", workchain=0, version="v3")
+	wallet1 = ion.CreateWallet(f"test{vnum+1}", workchain=0, version="v1")
+	wallet2 = ion.CreateWallet(f"test{vnum+2}", workchain=0, version="v2")
+	wallet3 = ion.CreateWallet(f"test{vnum+3}", workchain=0, version="v3")
 	local.buffer["vnum"] += 3
-	ton.ActivateWallet(wallet1)
-	ton.ActivateWallet(wallet2)
-	ton.ActivateWallet(wallet3)
+	ion.ActivateWallet(wallet1)
+	ion.ActivateWallet(wallet2)
+	ion.ActivateWallet(wallet3)
 	return wallet1, wallet2, wallet3
 #end define
 

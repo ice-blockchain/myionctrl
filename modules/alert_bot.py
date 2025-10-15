@@ -4,8 +4,8 @@ import requests
 
 from modules.module import MtcModule
 from mypylib.mypylib import get_timestamp, print_table, color_print
-from mytoncore import get_hostname, signed_int_to_hex64
-from mytonctrl.utils import timestamp2utcdatetime
+from myioncore import get_hostname, signed_int_to_hex64
+from myionctrl.utils import timestamp2utcdatetime
 
 
 @dataclasses.dataclass
@@ -30,36 +30,36 @@ def init_alerts():
     ALERTS = {
         "low_wallet_balance": Alert(
             "low",
-            "Validator's wallet balance is less than 10 TON",
-            "Validator's wallet <code>{wallet}</code> balance is less than 10 TON: {balance} TON.",
+            "Validator's wallet balance is less than 10 ION",
+            "Validator's wallet <code>{wallet}</code> balance is less than 10 ION: {balance} ION.",
             18 * HOUR
         ),
         "low_wallet_balance_ok": Alert(
             "info",
             "Validator's wallet balance is back to normal",
-            "Validator's wallet <code>{wallet}</code> balance is {balance} TON.",
+            "Validator's wallet <code>{wallet}</code> balance is {balance} ION.",
             0
         ),
         "db_usage_80": Alert(
             "high",
             "Node's db usage is more than 80%",
-            """TON DB usage > 80%. Clean the TON database: 
-            https://docs.ton.org/participate/nodes/node-maintenance-and-security#database-grooming 
+            """ION DB usage > 80%. Clean the ION database: 
+            https://docs.ice.io/participate/nodes/node-maintenance-and-security#database-grooming 
             or (and) set node\'s archive ttl to lower value.""",
             24 * HOUR
         ),
         "db_usage_95": Alert(
             "critical",
             "Node's db usage is more than 95%",
-            """TON DB usage > 95%. Disk is almost full, clean the TON database immediately: 
-            https://docs.ton.org/participate/nodes/node-maintenance-and-security#database-grooming 
+            """ION DB usage > 95%. Disk is almost full, clean the ION database immediately: 
+            https://docs.ice.io/participate/nodes/node-maintenance-and-security#database-grooming 
             or (and) set node\'s archive ttl to lower value.""",
             6 * HOUR
         ),
         "db_usage_ok": Alert(
             "info",
             "Node's db usage is back to normal",
-            "TON DB usage is back to normal: <b>{usage}%</b>.",
+            "ION DB usage is back to normal: <b>{usage}%</b>.",
             0
         ),
         "low_efficiency": Alert(
@@ -119,7 +119,7 @@ def init_alerts():
         "validator_slashed": Alert(
             "high",
             "Validator has been slashed in the previous validation round",
-            "Validator has been slashed in previous round for {amount} TON",
+            "Validator has been slashed in previous round for {amount} ION",
             VALIDATION_PERIOD
         ),
         "stake_not_accepted": Alert(
@@ -131,13 +131,13 @@ def init_alerts():
         "stake_accepted": Alert(
             "info",
             "Validator's stake has been accepted (info alert with no sound)",
-            "Validator's stake <b>{stake} TON</b> has been accepted",
+            "Validator's stake <b>{stake} ION</b> has been accepted",
             ELECTIONS_START_BEFORE
         ),
         "stake_returned": Alert(
             "info",
             "Validator's stake has been returned (info alert with no sound)",
-            "Validator's stake <b>{stake} TON</b> has been returned on address <code>{address}</code>. The reward amount is <b>{reward} TON</b>.",
+            "Validator's stake <b>{stake} ION</b> has been returned on address <code>{address}</code>. The reward amount is <b>{reward} ION</b>.",
             60
         ),
         "stake_not_returned": Alert(
@@ -149,7 +149,7 @@ def init_alerts():
         "voting": Alert(
             "high",
             "There is an active network proposal that has many votes (more than 50% of required) but is not voted by the validator",
-            "Found proposals with hashes `{hashes}` that have significant amount of votes, but current validator didn't vote for them. Please check @tonstatus for more details.",
+            "Found proposals with hashes `{hashes}` that have significant amount of votes, but current validator didn't vote for them. Please check @ionstatus for more details.",
             VALIDATION_PERIOD
         ),
         "voting_ok": Alert(
@@ -184,8 +184,8 @@ class AlertBotModule(MtcModule):
     description = 'Telegram bot alerts'
     default_value = False
 
-    def __init__(self, ton, local, *args, **kwargs):
-        super().__init__(ton, local, *args, **kwargs)
+    def __init__(self, ion, local, *args, **kwargs):
+        super().__init__(ion, local, *args, **kwargs)
         self.validator_module = None
         self.inited = False
         self.hostname = None
@@ -201,7 +201,7 @@ class AlertBotModule(MtcModule):
             raise Exception("send_message error: token is not initialized")
         if self.chat_id is None:
             raise Exception("send_message error: chat_id is not initialized")
-        request_url = f"https://api.telegram.org/bot{self.token}/sendMessage"
+        request_url = f"https://api.telegram.ice.io/bot{self.token}/sendMessage"
         data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'disable_notification': silent, 'link_preview_options': {'is_disabled': disable_web_page_preview}}
         response = requests.post(request_url, json=data, timeout=3)
         if response.status_code != 200:
@@ -235,7 +235,7 @@ Hostname: <code>{self.hostname}</code>
 Node IP: <code>{self.ip}</code>
 ADNL: <code>{self.adnl}</code>'''
 
-        if self.ton.using_validator():
+        if self.ion.using_validator():
             text += f"\nWallet: <code>{self.wallet}</code>"
 
         text += f'''
@@ -273,37 +273,37 @@ Severity: <code>{alert.severity}</code>
 
     def set_global_vars(self):
         # set global vars for correct alerts timeouts for current network
-        config15 = self.ton.GetConfig15()
+        config15 = self.ion.GetConfig15()
         global VALIDATION_PERIOD, FREEZE_PERIOD, ELECTIONS_START_BEFORE
         VALIDATION_PERIOD = config15["validatorsElectedFor"]
         FREEZE_PERIOD = config15["stakeHeldFor"]
         ELECTIONS_START_BEFORE = config15["electionsStartBefore"]
 
     def init(self):
-        if not self.ton.get_mode_value('alert-bot'):
+        if not self.ion.get_mode_value('alert-bot'):
             return
-        self.token = self.ton.local.db.get("BotToken")
-        self.chat_id = self.ton.local.db.get("ChatId")
+        self.token = self.ion.local.db.get("BotToken")
+        self.chat_id = self.ion.local.db.get("ChatId")
         if self.token is None or self.chat_id is None:
             raise Exception("BotToken or ChatId is not set")
         from modules.validator import ValidatorModule
-        self.validator_module = ValidatorModule(self.ton, self.local)
+        self.validator_module = ValidatorModule(self.ion, self.local)
         self.hostname = get_hostname()
-        adnl = self.ton.GetAdnlAddr()
+        adnl = self.ion.GetAdnlAddr()
         self.adnl = adnl
-        self.wallet = self.ton.GetValidatorWallet().addrB64
-        self.ip = self.ton.get_node_ip()
+        self.wallet = self.ion.GetValidatorWallet().addrB64
+        self.ip = self.ion.get_node_ip()
         self.set_global_vars()
-        self.initial_sync = self.ton.in_initial_sync()
+        self.initial_sync = self.ion.in_initial_sync()
         init_alerts()
         self.inited = True
 
     def get_alert_from_db(self, alert_name: str):
-        if 'alerts' not in self.ton.local.db:
-            self.ton.local.db['alerts'] = {}
-        if alert_name not in self.ton.local.db['alerts']:
-            self.ton.local.db['alerts'][alert_name] = {'sent': 0, 'enabled': True, 'active': False, 'resolved_sent': 0}
-        return self.ton.local.db['alerts'][alert_name]
+        if 'alerts' not in self.ion.local.db:
+            self.ion.local.db['alerts'] = {}
+        if alert_name not in self.ion.local.db['alerts']:
+            self.ion.local.db['alerts'][alert_name] = {'sent': 0, 'enabled': True, 'active': False, 'resolved_sent': 0}
+        return self.ion.local.db['alerts'][alert_name]
 
     def set_alert_sent(self, alert_name: str):
         alert = self.get_alert_from_db(alert_name)
@@ -320,7 +320,7 @@ Severity: <code>{alert.severity}</code>
     def set_alert_enabled(self, alert_name: str, enabled: bool):
         alert = self.get_alert_from_db(alert_name)
         alert['enabled'] = enabled
-        self.ton.local.save()
+        self.ion.local.save()
 
     def _set_alert_active(self, alert_name: str, active: bool):
         alert = self.get_alert_from_db(alert_name)
@@ -367,9 +367,9 @@ Severity: <code>{alert.severity}</code>
         init_alerts()
         try:
             self.send_welcome_message()
-            self.ton.local.db['BotToken'] = args[0]
-            self.ton.local.db['ChatId'] = args[1]
-            self.ton.local.save()
+            self.ion.local.db['BotToken'] = args[0]
+            self.ion.local.db['ChatId'] = args[1]
+            self.ion.local.save()
             color_print("setup_alert_bot - {green}OK{endc}")
         except Exception as e:
             self.local.add_log(f"Error while sending welcome message: {e}", "error")
@@ -378,7 +378,7 @@ Severity: <code>{alert.severity}</code>
 
     def send_welcome_message(self):
         message = f"""
-This is alert bot. You have connected validator with ADNL <code>{self.ton.GetAdnlAddr()}</code>.
+This is alert bot. You have connected validator with ADNL <code>{self.ion.GetAdnlAddr()}</code>.
 
 I don't process any commands, I only send notifications. 
 
@@ -389,9 +389,9 @@ Current notifications enabled:
             message += f"- {alert.description}\n"
 
         message += """
-If you want, you can disable some notifications in mytonctrl by the <a href="https://docs.ton.org/v3/guidelines/nodes/maintenance-guidelines/mytonctrl-private-alerting#endisbling-alerts"> instruction</a>.
+If you want, you can disable some notifications in myionctrl by the <a href="https://docs.ice.io/v3/guidelines/nodes/maintenance-guidelines/myionctrl-private-alerting#endisbling-alerts"> instruction</a>.
 
-Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/maintenance-guidelines/mytonctrl-private-alerting">here</a>.
+Full bot documentation <a href="https://docs.ice.io/v3/guidelines/nodes/maintenance-guidelines/myionctrl-private-alerting">here</a>.
 """
         self.send_message(text=message, disable_web_page_preview=True)
 
@@ -399,7 +399,7 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         if time.time() - self.last_db_check < 600:
             return
         self.last_db_check = time.time()
-        usage = self.ton.GetDbUsage()
+        usage = self.ion.GetDbUsage()
         if usage > 95:
             self.send_alert("db_usage_95")
         elif usage > 80:
@@ -408,25 +408,25 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
             self.resolve_alert_group(["db_usage_95", "db_usage_80"], "db_usage_ok", usage=int(usage))
 
     def check_validator_wallet_balance(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
-        validator_status = self.ton.GetValidatorStatus()
+        validator_status = self.ion.GetValidatorStatus()
         if not validator_status.is_working or validator_status.out_of_sync >= 20:
             return
-        validator_wallet = self.ton.GetValidatorWallet()
-        validator_account = self.ton.GetAccount(validator_wallet.addrB64)
+        validator_wallet = self.ion.GetValidatorWallet()
+        validator_account = self.ion.GetAccount(validator_wallet.addrB64)
         if validator_account.status != "empty" and validator_account.balance < 10:
             self.send_alert("low_wallet_balance", wallet=validator_wallet.addrB64, balance=validator_account.balance)
         else:
             self.resolve_alert("low_wallet_balance", ok_alert_name="low_wallet_balance_ok", wallet=validator_wallet.addrB64, balance=validator_account.balance)
 
     def check_efficiency(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
-        validator = self.validator_module.find_myself(self.ton.GetValidatorsList())
+        validator = self.validator_module.find_myself(self.ion.GetValidatorsList())
         if validator is None or validator.efficiency is None:
             return
-        config34 = self.ton.GetConfig34()
+        config34 = self.ion.GetConfig34()
         if (time.time() - config34.startWorkTime) / (config34.endWorkTime - config34.startWorkTime) < 0.8:
             return  # less than 80% of round passed
         if validator.is_masterchain is False:
@@ -436,29 +436,29 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
             self.send_alert("low_efficiency", efficiency=validator.efficiency)
 
     def check_validator_working(self):
-        validator_status = self.ton.GetValidatorStatus()
+        validator_status = self.ion.GetValidatorStatus()
         if not self.initial_sync and not validator_status.is_working:
             self.send_alert("service_down")
         elif not self.initial_sync and validator_status.is_working:
             self.resolve_alert("service_down", ok_alert_name="service_down_ok")
 
     def check_sync(self):
-        validator_status = self.ton.GetValidatorStatus()
+        validator_status = self.ion.GetValidatorStatus()
         if not self.initial_sync and validator_status.is_working and validator_status.out_of_sync >= 20:
             self.send_alert("out_of_sync", sync=validator_status.out_of_sync)
         elif not self.initial_sync and validator_status.is_working and validator_status.out_of_sync < 20:
             self.resolve_alert("out_of_sync", ok_alert_name="sync_ok", sync=validator_status.out_of_sync)
 
     def check_zero_blocks_created(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
         ts = get_timestamp()
         period = int(VALIDATION_PERIOD / 2.3)  # ~ 8h for mainnet, 100m for testnet
         start, end = ts - period, ts - 60
-        config34 = self.ton.GetConfig34()
+        config34 = self.ion.GetConfig34()
         if start < config34.startWorkTime:  # round started recently
             return
-        validators = self.ton.GetValidatorsList(start=start, end=end)
+        validators = self.ion.GetValidatorsList(start=start, end=end)
         validator = self.validator_module.find_myself(validators)
         if validator is None:
             return
@@ -468,7 +468,7 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         self.send_alert("zero_block_created", hours=round(period / 3600))
 
     def check_slashed(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
         c = self.validator_module.get_my_complaint()
         if c is not None:
@@ -476,7 +476,7 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
 
     def check_adnl_connection_failed(self):
         from modules.utilities import UtilitiesModule
-        utils_module = UtilitiesModule(self.ton, self.local)
+        utils_module = UtilitiesModule(self.ion, self.local)
         ok, error = utils_module.check_adnl_connection()
         if not ok:
             self.local.add_log(error, "warning")
@@ -487,8 +487,8 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
     def get_myself_from_election(self, config: dict):
         if not config["validators"]:
             return
-        adnl = self.ton.GetAdnlAddr()
-        save_elections = self.ton.GetSaveElections()
+        adnl = self.ion.GetAdnlAddr()
+        save_elections = self.ion.GetSaveElections()
         elections = save_elections.get(str(config["startWorkTime"]))
         if elections is None:
             return
@@ -502,9 +502,9 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         return validator
 
     def check_stake_sent(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
-        config = self.ton.GetConfig36()
+        config = self.ion.GetConfig36()
         res = self.get_myself_from_election(config)
         if res is None:
             return
@@ -514,15 +514,15 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         self.send_alert("stake_accepted", stake=round(res.get('stake')))
 
     def check_stake_returned(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
-        config = self.ton.GetConfig32()
+        config = self.ion.GetConfig32()
         if not (config['endWorkTime'] + FREEZE_PERIOD + 1800 <= time.time() < config['endWorkTime'] + FREEZE_PERIOD + 1860):  # check between 30th and 31st minutes after stakes have been unfrozen
             return
         res = self.get_myself_from_election(config)
         if not res:
             return
-        trs = self.ton.GetAccountHistory(self.ton.GetAccount(res["walletAddr"]), limit=10)
+        trs = self.ion.GetAccountHistory(self.ion.GetAccount(res["walletAddr"]), limit=10)
 
         for tr in trs:
             if tr.time >= config['endWorkTime'] + FREEZE_PERIOD and tr.srcAddr == '3333333333333333333333333333333333333333333333333333333333333333' and tr.body.startswith('F96F7324'):  # Elector Recover Stake Response
@@ -531,17 +531,17 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
         self.send_alert("stake_not_returned", address=res["walletAddr"])
 
     def check_voting(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
-        validator_index = self.ton.GetValidatorIndex()
+        validator_index = self.ion.GetValidatorIndex()
         if validator_index == -1:
             return
-        config = self.ton.GetConfig34()
+        config = self.ion.GetConfig34()
         if time.time() - config['startWorkTime'] < 600:  # less than 10 minutes passed since round start
             return
         need_to_vote = []
-        offers = self.ton.GetOffers()
-        saved_offers = self.ton.GetSaveOffers()
+        offers = self.ion.GetOffers()
+        saved_offers = self.ion.GetSaveOffers()
         for offer in offers:
             if not offer['isPassed'] and offer['approvedPercent'] >= 50 and validator_index not in offer['votedValidators'] and offer['hash'] not in saved_offers:
                 need_to_vote.append(offer['hash'])
@@ -553,12 +553,12 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
     def check_initial_sync(self):
         if not self.initial_sync:
             return
-        if not self.ton.in_initial_sync():
+        if not self.ion.in_initial_sync():
             self.initial_sync = False
             self.send_alert("initial_sync_completed")
 
     def check_online_collators(self):
-        if not self.ton.using_validator():
+        if not self.ion.using_validator():
             return
         collators_list = self.validator_module.get_collators_list()
         if not collators_list or not collators_list['shards']:
@@ -581,10 +581,10 @@ Full bot documentation <a href="https://docs.ton.org/v3/guidelines/nodes/mainten
             self.resolve_alert("shard_collators_offline", ok_alert_name="shard_collators_ok")
 
     def check_status(self):
-        if not self.ton.using_alert_bot():
+        if not self.ion.using_alert_bot():
             return
 
-        if not self.inited or self.token != self.ton.local.db.get("BotToken") or self.chat_id != self.ton.local.db.get("ChatId"):
+        if not self.inited or self.token != self.ion.local.db.get("BotToken") or self.chat_id != self.ion.local.db.get("ChatId"):
             self.init()
 
         self.local.try_function(self.check_db_usage)

@@ -40,10 +40,10 @@ class CollatorConfigModule(MtcModule):
 
     def add_collator_config_to_vc(self, config: dict):
         self.local.add_log(f"Adding collator options config to validator console", "debug")
-        path = self.ton.tempDir + f'/collator_config.json'
+        path = self.ion.tempDir + f'/collator_config.json'
         with open(path, 'w') as f:
             json.dump(config, f)
-        result = self.ton.validatorConsole.Run(f"setcollatoroptionsjson {path}")
+        result = self.ion.validatorConsole.Run(f"setcollatoroptionsjson {path}")
         return 'success' in result, result
 
     def set_collator_config(self, args):
@@ -52,7 +52,7 @@ class CollatorConfigModule(MtcModule):
             return
         location = args[0]
         config = self.get_config(location)
-        self.ton.set_collator_config(location)
+        self.ion.set_collator_config(location)
         added, msg = self.add_collator_config_to_vc(config)
         if not added:
             print(f'Failed to add collator config to validator console: {msg}')
@@ -61,10 +61,10 @@ class CollatorConfigModule(MtcModule):
         color_print("set_collator_config - {green}OK{endc}")
 
     def get_collator_config(self, args):
-        location = self.ton.get_collator_config_location()
+        location = self.ion.get_collator_config_location()
         print(f'Collator config location: {location}')
-        path = self.ton.tempDir + f'/current_collator_config.json'
-        output = self.ton.validatorConsole.Run(f'getcollatoroptionsjson {path}')
+        path = self.ion.tempDir + f'/current_collator_config.json'
+        output = self.ion.validatorConsole.Run(f'getcollatoroptionsjson {path}')
         if 'saved config to' not in output:
             print(f'Failed to get collator config: {output}')
             color_print("get_collator_config - {red}ERROR{endc}")
@@ -76,7 +76,7 @@ class CollatorConfigModule(MtcModule):
         color_print("get_collator_config - {green}OK{endc}")
 
     def update_collator_config(self, args):
-        location = self.ton.get_collator_config_location()
+        location = self.ion.get_collator_config_location()
         config = self.get_config(location)
         added, msg = self.add_collator_config_to_vc(config)
         if not added:

@@ -7,20 +7,20 @@ import pkg_resources
 
 from modules.module import MtcModule
 from mypylib.mypylib import color_print, ip2int, run_as_root, parse, MyPyClass
-from mytonctrl.utils import get_current_user, pop_user_from_args
-from mytoninstaller.config import get_own_ip
+from myionctrl.utils import get_current_user, pop_user_from_args
+from myioninstaller.config import get_own_ip
 
 
 class BackupModule(MtcModule):
 
     def create_keyring(self, dir_name):
         keyring_dir = dir_name + '/keyring'
-        self.ton.validatorConsole.Run(f'exportallprivatekeys {keyring_dir}')
+        self.ion.validatorConsole.Run(f'exportallprivatekeys {keyring_dir}')
 
-    def create_tmp_ton_dir(self):
-        result = self.ton.validatorConsole.Run("getconfig")
+    def create_tmp_ion_dir(self):
+        result = self.ion.validatorConsole.Run("getconfig")
         text = parse(result, "---------", "--------")
-        dir_name = self.ton.tempDir + f'/ton_backup_{int(time.time() * 1000)}'
+        dir_name = self.ion.tempDir + f'/ion_backup_{int(time.time() * 1000)}'
         dir_name_db = dir_name + '/db'
         os.makedirs(dir_name_db)
         with open(dir_name_db + '/config.json', 'w') as f:
@@ -32,15 +32,15 @@ class BackupModule(MtcModule):
     def run_create_backup(args, user: str = None):
         if user is None:
             user = get_current_user()
-        backup_script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/create_backup.sh')
+        backup_script_path = pkg_resources.resource_filename('myionctrl', 'scripts/create_backup.sh')
         return subprocess.run(["bash", backup_script_path, "-u", user] + args, timeout=5)
 
     def create_backup(self, args):
         if len(args) > 3:
             color_print("{red}Bad args. Usage:{endc} create_backup [filename] [-u <user>]")
             return
-        tmp_dir = self.create_tmp_ton_dir()
-        command_args = ["-m", self.ton.local.buffer.my_work_dir, "-t", tmp_dir]
+        tmp_dir = self.create_tmp_ion_dir()
+        command_args = ["-m", self.ion.local.buffer.my_work_dir, "-t", tmp_dir]
         user = pop_user_from_args(args)
         if len(args) == 1:
             command_args += ["-d", args[0]]
@@ -58,7 +58,7 @@ class BackupModule(MtcModule):
     def run_restore_backup(args, user: str = None):
         if user is None:
             user = get_current_user()
-        restore_script_path = pkg_resources.resource_filename('mytonctrl', 'scripts/restore_backup.sh')
+        restore_script_path = pkg_resources.resource_filename('myionctrl', 'scripts/restore_backup.sh')
         return run_as_root(["bash", restore_script_path, "-u", user] + args)
 
     def restore_backup(self, args):
@@ -84,13 +84,13 @@ class BackupModule(MtcModule):
                 color_print("{red}Could not create backup{endc}")
 
         ip = str(ip2int(get_own_ip()))
-        command_args = ["-m", self.ton.local.buffer.my_work_dir, "-n", args[0], "-i", ip]
+        command_args = ["-m", self.ion.local.buffer.my_work_dir, "-n", args[0], "-i", ip]
 
         if self.run_restore_backup(command_args, user=user) == 0:
-            self.ton.local.load_db()
-            if self.ton.using_validator():
+            self.ion.local.load_db()
+            if self.ion.using_validator():
                 from modules.btc_teleport import BtcTeleportModule
-                BtcTeleportModule(self.ton, self.local).init(reinstall=True)
+                BtcTeleportModule(self.ion, self.local).init(reinstall=True)
             color_print("restore_backup - {green}OK{endc}")
             self.local.exit()
         else:

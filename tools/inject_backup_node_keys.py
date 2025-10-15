@@ -10,7 +10,7 @@ def b64tohex(b64str: str):
 
 
 def run_vc(cmd: str):
-    args = ['/usr/bin/ton/validator-engine-console/validator-engine-console', '-k', '/var/ton-work/keys/client', '-p', '/var/ton-work/keys/server.pub', '-a', vc_address, '--cmd', cmd]
+    args = ['/usr/bin/ion/validator-engine-console/validator-engine-console', '-k', '/var/ion-work/keys/client', '-p', '/var/ion-work/keys/server.pub', '-a', vc_address, '--cmd', cmd]
     subprocess.run(args)
 
 
@@ -32,8 +32,8 @@ subprocess.run(f"mkdir -p {tmp_dir}", shell=True)
 
 subprocess.run(f'tar -xzf {name} -C {tmp_dir}', shell=True)
 
-subprocess.run(f'cp -rf {tmp_dir}/db/keyring /var/ton-work/db/', shell=True)
-subprocess.run(f'chown -R validator:validator /var/ton-work/db/keyring', shell=True)
+subprocess.run(f'cp -rf {tmp_dir}/db/keyring /var/ion-work/db/', shell=True)
+subprocess.run(f'chown -R validator:validator /var/ion-work/db/keyring', shell=True)
 
 with open(f'{tmp_dir}/db/config.json', 'r') as f:
     config = json.load(f)

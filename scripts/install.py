@@ -15,9 +15,9 @@ def get_archive_ttl_message(answers: dict):
     # or sent -1 to store downloaded blocks always
     if block_from.isdigit():
         seqno = int(block_from)
-        url = f'https://toncenter.com/api/v2/getBlockHeader?workchain=-1&shard={-2**63}&seqno={seqno}'
+        url = f'https://ice.io/api/v2/getBlockHeader?workchain=-1&shard={-2**63}&seqno={seqno}'
         if answers['network'] == 'Testnet':
-            url = url.replace('toncenter.com', 'testnet.toncenter.com')
+            url = url.replace('ice.io', 'testnet.ice.io')
         data = requests.get(url).json()
         if not data['ok']:
             raise Exception(f'Failed to get block: {data}')
@@ -93,7 +93,7 @@ def validate_shard_format(value):
 
 def run_cli():
     mode = questionary.select(
-        "Select installation mode (More on https://docs.ton.org/participate/nodes/node-types)",
+        "Select installation mode (More on https://docs.ice.io/participate/nodes/node-types)",
         choices=["validator", "liteserver", "collator"],
     ).unsafe_ask()
 
@@ -119,7 +119,7 @@ def run_cli():
     archive_blocks = None
     if mode == "liteserver":
         archive_blocks = questionary.text(
-            "Do you want to download archive blocks via TON Storage? Press Enter to skip.\n"
+            "Do you want to download archive blocks via ION Storage? Press Enter to skip.\n"
             "If yes, provide block seqno or date to start from and (optionally) block seqno or date to end with\n"
             "(send `1` to download all blocks and setup full archive node).\n"
             "Examples: `30850000`, `10000000 10200000`, `2025-01-01`, `2025-01-01 2025-01-30`",
@@ -169,7 +169,7 @@ def run_cli():
         ).unsafe_ask()
 
     background = questionary.confirm(
-        "Do you want to run MyTonCtrl installation in the background?"
+        "Do you want to run MyIonCtrl installation in the background?"
     ).unsafe_ask()
 
     answers = {
@@ -241,7 +241,7 @@ def run_install(answers: dict):
     stdin = None
     if background:
         CONFIG['PYTHONUNBUFFERED'] = '1'
-        log = open("mytonctrl_installation.log", "a")
+        log = open("myionctrl_installation.log", "a")
         stdin=subprocess.DEVNULL
         command = ['nohup'] + command
     command += args.split()
@@ -272,7 +272,7 @@ def run_install(answers: dict):
     if not background:
         process.wait()
     if background:
-        print("="*100 + f"\nRunning installation in the background. Check './mytonctrl_installation.log' for progress. PID: {process.pid}\n" + "="*100)
+        print("="*100 + f"\nRunning installation in the background. Check './myionctrl_installation.log' for progress. PID: {process.pid}\n" + "="*100)
 
 
 CONFIG = {}

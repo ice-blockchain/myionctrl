@@ -12,33 +12,33 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-author="ton-blockchain"
-repo="mytonctrl"
+author="ice-blockchain"
+repo="myionctrl"
 branch="master"
 network="mainnet"
-ton_node_version="master"  # Default version
-ton_node_git_url="https://github.com/ton-blockchain/ton.git"
+ion_node_version="master"  # Default version
+ion_node_git_url="https://github.com/ice-blockchain/ion.git"
 config_overridden=false
 
 show_help_and_exit() {
     echo 'Supported arguments:'
     echo ' -c, --config  URL             Provide custom network config'
     echo ' -e, --env-file  PATH          Provide env file with installation parameters'
-    echo ' --print-env                   Print result command and envs after interactive installer without installing MyTonCtrl'
+    echo ' --print-env                   Print result command and envs after interactive installer without installing MyIonCtrl'
     echo ' -t, --telemetry               Disable telemetry'
     echo ' -i, --ignore-reqs             Ignore minimum requirements'
     echo ' -d, --dump                    Use pre-packaged dump. Reduces duration of initial synchronization'
-    echo ' -a, --author                  Set MyTonCtrl git repo author'
-    echo ' -r, --repo                    Set MyTonCtrl git repo name'
-    echo ' -b, --branch                  Set MyTonCtrl git repo branch'
-    echo ' -m, --mode  MODE              Install MyTonCtrl with specified mode (validator or liteserver). Leave empty to launch interactive installer'
+    echo ' -a, --author                  Set MyIonCtrl git repo author'
+    echo ' -r, --repo                    Set MyIonCtrl git repo name'
+    echo ' -b, --branch                  Set MyIonCtrl git repo branch'
+    echo ' -m, --mode  MODE              Install MyIonCtrl with specified mode (validator or liteserver). Leave empty to launch interactive installer'
     echo ' -n, --network  NETWORK        Specify the network (mainnet or testnet)'
-    echo ' -g, --node-repo  URL          TON node git repo URL (default: https://github.com/ton-blockchain/ton.git)'
-    echo ' -v, --node-version  VERSION   Specify the TON node version (commit, branch, or tag)'
-    echo ' -u, --user  USER              Specify the user to be used for MyTonCtrl installation'
-    echo ' -p, --backup  PATH            Provide backup file for MyTonCtrl installation'
-    echo ' -o, --only-mtc                Install only MyTonCtrl. Must be used with -p'
-    echo ' -l, --only-node               Install only TON node'
+    echo ' -g, --node-repo  URL          ION node git repo URL (default: https://github.com/ice-blockchain/ion.git)'
+    echo ' -v, --node-version  VERSION   Specify the ION node version (commit, branch, or tag)'
+    echo ' -u, --user  USER              Specify the user to be used for MyIonCtrl installation'
+    echo ' -p, --backup  PATH            Provide backup file for MyIonCtrl installation'
+    echo ' -o, --only-mtc                Install only MyIonCtrl. Must be used with -p'
+    echo ' -l, --only-node               Install only ION node'
     echo ' -h, --help                    Show this help'
     exit
 }
@@ -48,7 +48,7 @@ if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
 fi
 
 # node install parameters
-config="https://ton-blockchain.github.io/global.config.json"
+config="https://cdn.ice.io/mainnet/global.config.json"
 env_file=""
 telemetry=true
 ignore=false
@@ -119,11 +119,11 @@ while getopts ":c:tidola:r:b:m:n:v:u:p:g:e:h" flag; do
         d) dump=true;;
         a) author=${OPTARG};;
         r) repo=${OPTARG};;
-        g) ton_node_git_url=${OPTARG};;
+        g) ion_node_git_url=${OPTARG};;
         b) branch=${OPTARG};;
         m) mode=${OPTARG};;
         n) network=${OPTARG};;
-        v) ton_node_version=${OPTARG};;
+        v) ion_node_version=${OPTARG};;
         u) user=${OPTARG};;
         o) only_mtc=true;;
         l) only_node=true;;
@@ -168,7 +168,7 @@ fi
 # Set config based on network argument
 if [ "${network}" = "testnet" ]; then
     if [ "${config_overridden}" = false ]; then
-        config="https://ton-blockchain.github.io/testnet-global.config.json"
+        config="https://cdn.ice.io/testnet/global.config.json"
     fi
 
     cpu_required=8
@@ -187,7 +187,7 @@ if [ "$ignore" = false ] && ([ "${cpus}" -lt "${cpu_required}" ] || [ "${memory}
     exit 1
 fi
 
-echo -e "${COLOR}[2/5]${ENDC} Checking for required TON components"
+echo -e "${COLOR}[2/5]${ENDC} Checking for required ION components"
 SOURCES_DIR=/usr/src
 BIN_DIR=/usr/bin
 
@@ -206,33 +206,34 @@ break-system-packages = true
 EOF
 fi
 
-# check TON components
-file1=${BIN_DIR}/ton/crypto/fift
-file2=${BIN_DIR}/ton/lite-client/lite-client
-file3=${BIN_DIR}/ton/validator-engine-console/validator-engine-console
+# check ION components
+file1=${BIN_DIR}/ion/crypto/fift
+file2=${BIN_DIR}/ion/lite-client/lite-client
+file3=${BIN_DIR}/ion/validator-engine-console/validator-engine-console
 
 if  [ ! -f "${file1}" ] || [ ! -f "${file2}" ] || [ ! -f "${file3}" ]; then
-    echo "TON does not exists, building"
-    wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/ton_installer.sh -O /tmp/ton_installer.sh
-    bash /tmp/ton_installer.sh -c ${config} -g ${ton_node_git_url} -v ${ton_node_version}
+    echo "ION does not exists, building"
+    wget https://raw.githubusercontent.com/${author}/${repo}/${branch}/scripts/ion_installer.sh -O /tmp/ion_installer.sh
+    bash /tmp/ion_installer.sh -c ${config} -g ${ion_node_git_url} -v ${ion_node_version}
 fi
 
-# Cloning mytonctrl
-echo -e "${COLOR}[3/5]${ENDC} Installing MyTonCtrl"
+# Cloning myionctrl
+echo -e "${COLOR}[3/5]${ENDC} Installing MyIonCtrl"
 echo "https://github.com/${author}/${repo}.git -> ${branch}"
 
 # remove previous installation
 cd $SOURCES_DIR
-rm -rf $SOURCES_DIR/mytonctrl
-pip3 uninstall -y mytonctrl
+rm -rf $SOURCES_DIR/myionctrl
+pip3 uninstall --break-system-packages myionctrl
+pip3 install --break-system-packages psutil==6.1.0 crc16==0.1.1 requests==2.32.3
 
-git clone --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
+git clone --depth 1 --branch ${branch} --recursive https://github.com/${author}/${repo}.git ${repo}  # TODO: return --recursive back when fix libraries
 git config --global --add safe.directory $SOURCES_DIR/${repo}
 cd $SOURCES_DIR/${repo}
 
-pip3 install -U .  # TODO: make installation from git directly
+pip3 install --break-system-packages -U .  # TODO: make installation from git directly
 
-echo -e "${COLOR}[4/5]${ENDC} Running mytoninstaller"
+echo -e "${COLOR}[4/5]${ENDC} Running myioninstaller"
 # DEBUG
 
 if [ "${user}" = "" ]; then  # no user
@@ -243,20 +244,12 @@ if [ "${user}" = "" ]; then  # no user
     fi
 fi
 echo "User: $user"
-python3 -m mytoninstaller -u ${user} -t ${telemetry} --dump ${dump} -m ${mode} --only-mtc ${only_mtc} --backup ${backup} --only-node ${only_node}
+python3 -m myioninstaller -u ${user} -t ${telemetry} --dump ${dump} -m ${mode} --only-mtc ${only_mtc} --backup ${backup} --only-node ${only_node}
 
-# set migrate version
-migrate_version=1
-version_dir="/home/${user}/.local/share/mytonctrl"
-version_path="${version_dir}/VERSION"
-mkdir -p ${version_dir}
-echo ${migrate_version} > ${version_path}
-chown ${user}:${user} ${version_dir} ${version_path}
-
-# create symbolic link if branch not eq mytonctrl
-if [ "${repo}" != "mytonctrl" ]; then
-    ln -sf ${SOURCES_DIR}/${repo} ${SOURCES_DIR}/mytonctrl
+# create symbolic link if branch not eq myionctrl
+if [ "${repo}" != "myionctrl" ]; then
+    ln -sf ${SOURCES_DIR}/${repo} ${SOURCES_DIR}/myionctrl
 fi
 
-echo -e "${COLOR}[5/5]${ENDC} Mytonctrl installation completed"
+echo -e "${COLOR}[5/5]${ENDC} Myionctrl installation completed"
 exit 0

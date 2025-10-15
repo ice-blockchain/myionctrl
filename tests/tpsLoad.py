@@ -4,39 +4,39 @@
 import time
 
 from mypylib.mypylib import MyPyClass
-from mytoncore import MyTonCore, Sleep
+from myioncore import MyIonCore, Sleep
 
 
 local = MyPyClass('./tests')
 local.db["config"]["logLevel"] = "info"
 load = 100
-ton = MyTonCore(local)
+ion = MyIonCore(local)
 
 
 def Init():
 	wallets = list()
 	local.buffer["wallets"] = wallets
-	walletsNameList = ton.GetWalletsNameList()
+	walletsNameList = ion.GetWalletsNameList()
 	
 	# Create tests wallet
 	testsWalletName = "tests_hwallet"
-	testsWallet = ton.CreateHighWallet(testsWalletName)
+	testsWallet = ion.CreateHighWallet(testsWalletName)
 
 	# Check tests wallet balance
-	account = ton.GetAccount(testsWallet.addr)
+	account = ion.GetAccount(testsWallet.addr)
 	local.AddLog("wallet: {addr}, status: {status}, balance: {balance}".format(addr=testsWallet.addr, status=account.status, balance=account.balance))
 	if account.balance == 0:
 		raise Exception(testsWallet.name + " wallet balance is empty.")
 	if account.status == "uninit":
-		ton.SendFile(testsWallet.bocFilePath, testsWallet)
+		ion.SendFile(testsWallet.bocFilePath, testsWallet)
 
 	# Create wallets
 	for i in range(load):
 		walletName = "w_" + str(i)
 		if walletName not in walletsNameList:
-			wallet = ton.CreateWallet(walletName)
+			wallet = ion.CreateWallet(walletName)
 		else:
-			wallet = ton.GetLocalWallet(walletName)
+			wallet = ion.GetLocalWallet(walletName)
 		wallets.append(wallet)
 	#end for
 
@@ -45,30 +45,30 @@ def Init():
 	buff_seqno = None
 	destList = list()
 	for wallet in wallets:
-		wallet.account = ton.GetAccount(wallet.addr)
+		wallet.account = ion.GetAccount(wallet.addr)
 		need = 20 - wallet.account.balance
 		if need > 10:
 			destList.append([wallet.addr_init, need])
 		elif need < -10:
 			need = need * -1
 			buff_wallet = wallet
-			buff_wallet.oldseqno = ton.GetSeqno(wallet)
-			ton.MoveGrams(wallet, testsWallet.addr, need, wait=False)
+			buff_wallet.oldseqno = ion.GetSeqno(wallet)
+			ion.MoveGrams(wallet, testsWallet.addr, need, wait=False)
 			local.AddLog(testsWallet.name + " <<< " + wallet.name)
 	if buff_wallet:
-		ton.WaitTransaction(buff_wallet, False)
+		ion.WaitTransaction(buff_wallet, False)
 	#end for
 
 	# Move grams from highload wallet
-	ton.MoveGramsFromHW(testsWallet, destList)
+	ion.MoveGramsFromHW(testsWallet, destList)
 
 	# Activate wallets
 	for wallet in wallets:
 		if wallet.account.status == "uninit":
-			wallet.oldseqno = ton.GetSeqno(wallet)
-			ton.SendFile(wallet.bocFilePath)
+			wallet.oldseqno = ion.GetSeqno(wallet)
+			ion.SendFile(wallet.bocFilePath)
 		local.AddLog(str(wallet.subwallet) + " - OK")
-	ton.WaitTransaction(wallets[-1])
+	ion.WaitTransaction(wallets[-1])
 #end define
 
 def Work():
@@ -80,10 +80,10 @@ def Work():
 		
 		wallet1 = wallets[i]
 		wallet2 = wallets[i+1]
-		wallet1.oldseqno = ton.GetSeqno(wallet1)
-		ton.MoveGrams(wallet1, wallet2.addr, 3.14, wait=False)
+		wallet1.oldseqno = ion.GetSeqno(wallet1)
+		ion.MoveGrams(wallet1, wallet2.addr, 3.14, wait=False)
 		local.AddLog(wallet1.name + " >>> " + wallet2.name)
-	ton.WaitTransaction(wallets[-1])
+	ion.WaitTransaction(wallets[-1])
 #end define
 
 def General():
