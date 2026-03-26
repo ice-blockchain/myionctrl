@@ -6,21 +6,21 @@ from pytest_mock import MockerFixture
 from modules.backups import BackupModule
 from modules import backups as backups_module
 from mypylib.mypylib import MyPyClass
-from mytoncore.utils import get_package_resource_path
-from mytoncore.mytoncore import MyTonCore
+from myioncore.utils import get_package_resource_path
+from myioncore.myioncore import MyIonCore
 from pathlib import Path
 
-from mytonctrl.utils import get_current_user
+from myionctrl.utils import get_current_user
 
 
-def test_create_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
+def test_create_backup(cli, ion, monkeypatch, tmp_path, mocker: MockerFixture):
     tmp_dir = tmp_path / "test"
 
-    def create_tmp_ton_dir(_):
+    def create_tmp_ion_dir(_):
         os.makedirs(tmp_dir)
         return str(tmp_dir)
 
-    monkeypatch.setattr(BackupModule, "create_tmp_ton_dir", create_tmp_ton_dir)
+    monkeypatch.setattr(BackupModule, "create_tmp_ion_dir", create_tmp_ion_dir)
 
     fun_args, fun_user = [], None
     return_code = 0
@@ -38,18 +38,18 @@ def test_create_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
     output = cli.execute("create_backup", no_color=True)
     assert "create_backup - OK" in output
     assert fun_user is None
-    assert fun_args == ["-m", ton.local.buffer.my_work_dir, "-t", str(tmp_dir)]
+    assert fun_args == ["-m", ion.local.buffer.my_work_dir, "-t", str(tmp_dir)]
 
     output = cli.execute("create_backup /to_dir/", no_color=True)
     assert "create_backup - OK" in output
     assert fun_user is None
-    assert fun_args == ["-m", ton.local.buffer.my_work_dir, "-t", str(tmp_dir), "-d", "/to_dir/"]
+    assert fun_args == ["-m", ion.local.buffer.my_work_dir, "-t", str(tmp_dir), "-d", "/to_dir/"]
     assert not Path(tmp_dir).exists()
 
     output = cli.execute("create_backup /to_dir/ -u yungwine", no_color=True)
     assert "create_backup - OK" in output
     assert fun_user == 'yungwine'
-    assert fun_args == ["-m", ton.local.buffer.my_work_dir, "-t", str(tmp_dir), "-d", "/to_dir/"]
+    assert fun_args == ["-m", ion.local.buffer.my_work_dir, "-t", str(tmp_dir), "-d", "/to_dir/"]
     assert not Path(tmp_dir).exists()
 
     return_code = 1
@@ -58,7 +58,7 @@ def test_create_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
 
 
 
-def test_restore_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
+def test_restore_backup(cli, ion, monkeypatch, tmp_path, mocker: MockerFixture):
     exit_mock = mocker.Mock()
     monkeypatch.setattr(MyPyClass, "exit", exit_mock)
 
@@ -79,8 +79,8 @@ def test_restore_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
 
     def fake_run_restore_backup(*args, **kwargs):
         # really do update db after restore
-        with open(ton.local.buffer.db_path, 'w') as f:
-            new_db = ton.local.db.copy()
+        with open(ion.local.buffer.db_path, 'w') as f:
+            new_db = ion.local.db.copy()
             new_db.update({"abc": 123})
             f.write(json.dumps(new_db))
         return run_restore_backup(*args, **kwargs)
@@ -88,17 +88,17 @@ def test_restore_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
     monkeypatch.setattr(BackupModule, "run_restore_backup", staticmethod(fake_run_restore_backup))
 
     current_user = get_current_user()
-    with get_package_resource_path('mytonctrl', 'scripts/restore_backup.sh') as backup_path:
+    with get_package_resource_path('myionctrl', 'scripts/restore_backup.sh') as backup_path:
         assert backup_path.is_file()
 
     def assert_happy_run_args(outp: str, user: str):
         assert 'restore_backup - OK' in outp
         exit_mock.assert_called_once()  # exited after restore_backup
-        assert run_args == ['bash', backup_path, '-u', user, '-m', ton.local.buffer.my_work_dir, '-n',
+        assert run_args == ['bash', backup_path, '-u', user, '-m', ion.local.buffer.my_work_dir, '-n',
                             'backup.tar.gz', '-i', '2130706433']
-        assert ton.local.db.get('abc') == 123  # db updated after restore_backup
+        assert ion.local.db.get('abc') == 123  # db updated after restore_backup
 
-    monkeypatch.setattr(MyTonCore, "using_validator", lambda self: False)
+    monkeypatch.setattr(MyIonCore, "using_validator", lambda self: False)
 
     # bad args
     output = cli.execute("restore_backup", no_color=True)
@@ -142,7 +142,7 @@ def test_restore_backup(cli, ton, monkeypatch, tmp_path, mocker: MockerFixture):
     # check btc teleport installment
     exit_mock.reset_mock()
     create_backup_mock.reset_mock()
-    monkeypatch.setattr(MyTonCore, "using_validator", lambda self: True)
+    monkeypatch.setattr(MyIonCore, "using_validator", lambda self: True)
 
     from modules import btc_teleport
     btc_teleport_mock = mocker.Mock()

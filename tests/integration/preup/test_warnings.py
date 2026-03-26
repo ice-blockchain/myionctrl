@@ -2,29 +2,29 @@ import pytest
 from pytest_mock import MockerFixture
 
 import modules
-from mytoncore import MyTonCore
-from mytonctrl import mytonctrl
+from myioncore import MyIonCore
+from myionctrl import myionctrl
 
 
 @pytest.fixture(autouse=True)
 def before_test(monkeypatch):
-    monkeypatch.setattr(mytonctrl, 'check_mytonctrl_update', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'check_installer_user', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'check_vport', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_myionctrl_update', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_installer_user', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_vport', lambda *_: None)
 
 def test_check_disk_usage(cli, monkeypatch):
-    monkeypatch.setattr(MyTonCore, 'GetDbUsage', lambda *_: 95)
+    monkeypatch.setattr(MyIonCore, 'GetDbUsage', lambda *_: 95)
     output = cli.run_pre_up()
-    assert 'Disk is almost full, clean the TON database immediately' in output
+    assert 'Disk is almost full, clean the ION database immediately' in output
 
-    monkeypatch.setattr(MyTonCore, 'GetDbUsage', lambda *_: 70)
+    monkeypatch.setattr(MyIonCore, 'GetDbUsage', lambda *_: 70)
     output = cli.run_pre_up()
     assert 'Disk is almost full' not in output
 
 
-def test_check_sync(cli, monkeypatch, ton, mocker: MockerFixture):
+def test_check_sync(cli, monkeypatch, ion, mocker: MockerFixture):
     mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, 'GetValidatorStatus', mock)
+    monkeypatch.setattr(MyIonCore, 'GetValidatorStatus', mock)
     output = cli.run_pre_up()
     assert 'Node sync is not completed' in output
 
@@ -49,7 +49,7 @@ def test_check_adnl(cli, monkeypatch, mocker: MockerFixture):
     assert 'ADNL connection failed' in output
 
     config_mock.fullnodeslaves = True
-    monkeypatch.setattr(MyTonCore, 'GetValidatorConfig', lambda *_: config_mock)
+    monkeypatch.setattr(MyIonCore, 'GetValidatorConfig', lambda *_: config_mock)
     output = cli.run_pre_up()
     assert 'ADNL' not in output
 
@@ -61,14 +61,14 @@ def test_check_adnl(cli, monkeypatch, mocker: MockerFixture):
 
 def test_check_validator_balance(cli, monkeypatch, mocker: MockerFixture):
     validator_status_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, 'GetValidatorStatus', lambda *_: validator_status_mock)
+    monkeypatch.setattr(MyIonCore, 'GetValidatorStatus', lambda *_: validator_status_mock)
 
     account_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, 'GetAccount', lambda *_: account_mock)
+    monkeypatch.setattr(MyIonCore, 'GetAccount', lambda *_: account_mock)
 
     validator_wallet_mock = mocker.Mock()
     validator_wallet_mock.addrB64 = 'test_address'
-    monkeypatch.setattr(MyTonCore, 'GetValidatorWallet', lambda *_: validator_wallet_mock)
+    monkeypatch.setattr(MyIonCore, 'GetValidatorWallet', lambda *_: validator_wallet_mock)
 
     validator_status_mock.is_working = False
     validator_status_mock.out_of_sync = 0
@@ -76,16 +76,16 @@ def test_check_validator_balance(cli, monkeypatch, mocker: MockerFixture):
     assert 'balance' not in output
 
     validator_status_mock.is_working = True
-    monkeypatch.setattr(MyTonCore, 'using_validator', lambda *_: False)
+    monkeypatch.setattr(MyIonCore, 'using_validator', lambda *_: False)
     output = cli.run_pre_up()
     assert 'balance' not in output
 
-    monkeypatch.setattr(MyTonCore, 'using_validator', lambda *_: True)
-    monkeypatch.setattr(MyTonCore, 'GetAccount', lambda *_: None)
+    monkeypatch.setattr(MyIonCore, 'using_validator', lambda *_: True)
+    monkeypatch.setattr(MyIonCore, 'GetAccount', lambda *_: None)
     output = cli.run_pre_up()
     assert 'Failed to check validator wallet balance' in output
 
-    monkeypatch.setattr(MyTonCore, 'GetAccount', lambda *_: account_mock)
+    monkeypatch.setattr(MyIonCore, 'GetAccount', lambda *_: account_mock)
     account_mock.balance = 50
     output = cli.run_pre_up()
     assert 'Validator wallet balance is low' in output
@@ -96,41 +96,41 @@ def test_check_validator_balance(cli, monkeypatch, mocker: MockerFixture):
 
 
 def test_check_vps(cli, monkeypatch):
-    monkeypatch.setattr('mytonctrl.mytonctrl.is_host_virtual', lambda : {'virtual': True, 'product_name': 'VirtualBox'})
+    monkeypatch.setattr('myionctrl.myionctrl.is_host_virtual', lambda : {'virtual': True, 'product_name': 'VirtualBox'})
     output = cli.run_pre_up()
     assert 'Virtualization detected' in output
 
-    monkeypatch.setattr('mytonctrl.mytonctrl.is_host_virtual', lambda : {'virtual': False})
+    monkeypatch.setattr('myionctrl.myionctrl.is_host_virtual', lambda : {'virtual': False})
     output = cli.run_pre_up()
     assert 'Virtualization detected' not in output
 
 
-def test_check_tg_channel(cli, monkeypatch, ton):
-    monkeypatch.setattr(MyTonCore, 'using_validator', lambda *_: True)
+def test_check_tg_channel(cli, monkeypatch, ion):
+    monkeypatch.setattr(MyIonCore, 'using_validator', lambda *_: True)
     output = cli.run_pre_up()
-    assert 'Make sure you are subscribed to the TON validators channel' in output
+    assert 'Make sure you are subscribed to the ION validators channel' in output
 
-    ton.local.db['subscribe_tg_channel'] = True
-    monkeypatch.setattr(MyTonCore, 'using_validator', lambda *_: True)
+    ion.local.db['subscribe_tg_channel'] = True
+    monkeypatch.setattr(MyIonCore, 'using_validator', lambda *_: True)
     output = cli.run_pre_up()
-    assert 'Make sure you are subscribed to the TON validators channel' not in output
+    assert 'Make sure you are subscribed to the ION validators channel' not in output
 
-    monkeypatch.setattr(MyTonCore, 'using_validator', lambda *_: False)
+    monkeypatch.setattr(MyIonCore, 'using_validator', lambda *_: False)
     output = cli.run_pre_up()
-    assert 'Make sure you are subscribed to the TON validators channel' not in output
+    assert 'Make sure you are subscribed to the ION validators channel' not in output
 
 
 def test_check_slashed(cli, monkeypatch, mocker: MockerFixture):
     validator_status_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, 'GetValidatorStatus', lambda *_: validator_status_mock)
+    monkeypatch.setattr(MyIonCore, 'GetValidatorStatus', lambda *_: validator_status_mock)
 
-    monkeypatch.setattr(MyTonCore, 'using_validator', lambda *_: True)
+    monkeypatch.setattr(MyIonCore, 'using_validator', lambda *_: True)
     validator_status_mock.out_of_sync = 10
 
     monkeypatch.setattr(modules.ValidatorModule, 'get_my_complaint', lambda *_: {'suggestedFine': 99})
     validator_status_mock.is_working = True
     output = cli.run_pre_up()
-    assert 'You were fined by 99 TON' in output
+    assert 'You were fined by 99 ION' in output
 
     monkeypatch.setattr(modules.ValidatorModule, 'get_my_complaint', lambda *_: None)
     validator_status_mock.is_working = True
@@ -143,7 +143,7 @@ def test_check_slashed(cli, monkeypatch, mocker: MockerFixture):
 
 
 def test_check_ubuntu_version(cli, monkeypatch, mocker: MockerFixture):
-    monkeypatch.setattr(mytonctrl.os.path, 'exists', lambda _: True)
+    monkeypatch.setattr(myionctrl.os.path, 'exists', lambda _: True)
     res = '''
 PRETTY_NAME="Ubuntu 22.04.4 LTS"
 NAME="Ubuntu"
@@ -157,7 +157,7 @@ ID=ubuntu
     output = cli.run_pre_up()
     assert 'Ubuntu' not in output
 
-    monkeypatch.setattr(mytonctrl.os.path, 'exists', lambda _: True)
+    monkeypatch.setattr(myionctrl.os.path, 'exists', lambda _: True)
     res = '''
     PRETTY_NAME="Ubuntu 24.04.4 LTS"
     NAME="Ubuntu"

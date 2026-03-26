@@ -7,7 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from mypylib import Dict
-from mytoncore.mytoncore import MyTonCore
+from myioncore.myioncore import MyIonCore
 
 
 def test_vote_offer(cli, monkeypatch, mocker: MockerFixture):
@@ -15,12 +15,12 @@ def test_vote_offer(cli, monkeypatch, mocker: MockerFixture):
     output = cli.execute("vo", no_color=True)
     assert "Bad args" in output
     offers = [{"hash": "hash1", "data": "offer-data"}, {"hash": "hash2", "data": "offer-data"}, {"hash": "hash3", "data": "offer-data"}]
-    monkeypatch.setattr(MyTonCore, "GetOffers", lambda _: offers)
+    monkeypatch.setattr(MyIonCore, "GetOffers", lambda _: offers)
     vote_offer_mock = mocker.Mock()
     add_save_offer_mock = mocker.Mock()
 
-    monkeypatch.setattr(MyTonCore, "VoteOffer", vote_offer_mock)
-    monkeypatch.setattr(MyTonCore, "add_save_offer", add_save_offer_mock)
+    monkeypatch.setattr(MyIonCore, "VoteOffer", vote_offer_mock)
+    monkeypatch.setattr(MyIonCore, "add_save_offer", add_save_offer_mock)
 
     output = cli.execute("vo hash2", no_color=True)
     assert "VoteOffer - OK" in output
@@ -37,7 +37,7 @@ def test_vote_offer(cli, monkeypatch, mocker: MockerFixture):
 
 def test_ve(cli, monkeypatch, mocker: MockerFixture):
     elections_mocker = mocker.Mock()
-    monkeypatch.setattr('mytoncore.functions.Elections', elections_mocker)
+    monkeypatch.setattr('myioncore.functions.Elections', elections_mocker)
     output = cli.execute("ve", no_color=True)
     assert "VoteElectionEntry - OK" in output
     elections_mocker.assert_called_once()
@@ -51,7 +51,7 @@ def test_vc(cli, monkeypatch, mocker: MockerFixture):
     assert "Bad args" in output
 
     vote_complaint_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "VoteComplaint", vote_complaint_mock)
+    monkeypatch.setattr(MyIonCore, "VoteComplaint", vote_complaint_mock)
     output = cli.execute("vc 123456 abcdef", no_color=True)
     assert "VoteComplaint - OK" in output
     vote_complaint_mock.assert_called_once_with("123456", "abcdef")
@@ -84,33 +84,33 @@ def test_check_ef(cli, monkeypatch, mocker: MockerFixture):
     config34.endWorkTime = 3000000
     config34.mainValidators = 100
 
-    monkeypatch.setattr(MyTonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [curr_validator])
-    monkeypatch.setattr(MyTonCore, "GetAdnlAddr", lambda self: "test_adnl")
-    monkeypatch.setattr(MyTonCore, "GetConfig32", lambda self: config32)
-    monkeypatch.setattr(MyTonCore, "GetConfig34", lambda self: config34)
+    monkeypatch.setattr(MyIonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [curr_validator])
+    monkeypatch.setattr(MyIonCore, "GetAdnlAddr", lambda self: "test_adnl")
+    monkeypatch.setattr(MyIonCore, "GetConfig32", lambda self: config32)
+    monkeypatch.setattr(MyIonCore, "GetConfig34", lambda self: config34)
 
     output = cli.execute("check_ef", no_color=True)
     assert "Previous round efficiency: 95.5% (100 blocks created / 105 blocks expected)" in output
     assert "Current round efficiency: 92.0% (50 blocks created / 54 blocks expected)" in output
 
-    monkeypatch.setattr(MyTonCore, "GetValidatorsList", lambda self, past=False: [] if past else [curr_validator])
+    monkeypatch.setattr(MyIonCore, "GetValidatorsList", lambda self, past=False: [] if past else [curr_validator])
     output = cli.execute("check_ef", no_color=True)
     assert "Couldn't find this validator in the previous round" in output
     assert "Current round efficiency" in output
 
-    monkeypatch.setattr(MyTonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [])
+    monkeypatch.setattr(MyIonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [])
     output = cli.execute("check_ef", no_color=True)
     assert "Couldn't find this validator in the current round" in output
     assert "Previous round efficiency" in output
 
     prev_validator.efficiency = None
-    monkeypatch.setattr(MyTonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [curr_validator])
+    monkeypatch.setattr(MyIonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [curr_validator])
     output = cli.execute("check_ef", no_color=True)
     assert "Failed to get efficiency for the previous round" in output
     assert "Current round efficiency" in output
 
     prev_validator.efficiency = 95.5
-    monkeypatch.setattr(MyTonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [curr_validator])
+    monkeypatch.setattr(MyIonCore, "GetValidatorsList", lambda self, past=False: [prev_validator] if past else [curr_validator])
     config34.startWorkTime = int(time.time() - 1000)
     config34.endWorkTime = int(time.time() + 1000000)
     output = cli.execute("check_ef", no_color=True)
@@ -118,7 +118,7 @@ def test_check_ef(cli, monkeypatch, mocker: MockerFixture):
     assert "Previous round efficiency" in output
 
 
-def test_add_collator(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_add_collator(cli, ion, monkeypatch, mocker: MockerFixture):
     get_collators_mock = mocker.Mock(return_value={})
     set_collators_mock = mocker.Mock()
     monkeypatch.setattr(ValidatorModule, 'get_collators_list', get_collators_mock)
@@ -210,7 +210,7 @@ def test_add_collator(cli, ton, monkeypatch, mocker: MockerFixture):
     set_collators_mock.assert_not_called()
 
 
-def test_delete_collator(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_delete_collator(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("delete_collator")
     assert "Bad args" in output
@@ -318,14 +318,14 @@ def test_delete_collator(cli, ton, monkeypatch, mocker: MockerFixture):
     get_collators_mock.assert_called_once()
 
 
-def test_print_collators(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_print_collators(cli, ion, monkeypatch, mocker: MockerFixture):
     get_collators_mock = mocker.Mock()
     get_collators_stats_mock = mocker.Mock()
     validator_console_mock = mocker.Mock()
 
     monkeypatch.setattr(ValidatorModule, 'get_collators_list', get_collators_mock)
     monkeypatch.setattr(ValidatorModule, 'get_collators_stats', get_collators_stats_mock)
-    ton.validatorConsole = validator_console_mock
+    ion.validatorConsole = validator_console_mock
 
     # --json flag
     collators_data = {"some_data": "some_value", 1: 2}
@@ -378,11 +378,11 @@ Shard (0,8000000000000000)
     get_collators_stats_mock.assert_not_called()
 
 
-def test_reset_collators(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_reset_collators(cli, ion, monkeypatch, mocker: MockerFixture):
     get_collators_mock = mocker.Mock()
     validator_console_mock = mocker.Mock()
     monkeypatch.setattr(ValidatorModule, 'get_collators_list', get_collators_mock)
-    ton.validatorConsole = validator_console_mock
+    ion.validatorConsole = validator_console_mock
 
     # no collators
     get_collators_mock.return_value = {}

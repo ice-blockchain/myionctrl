@@ -1,16 +1,16 @@
 import os
 from pytest_mock import MockerFixture
 from mypylib import Dict
-from mytoncore.mytoncore import MyTonCore
+from myioncore.myioncore import MyIonCore
 
 from tests.helpers import create_pool_file
 
 
-def test_pools_list(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_pools_list(cli, ion, monkeypatch, mocker: MockerFixture):
     get_pools_mock = mocker.Mock()
     get_account_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetPools", get_pools_mock)
-    monkeypatch.setattr(MyTonCore, "GetAccount", get_account_mock)
+    monkeypatch.setattr(MyIonCore, "GetPools", get_pools_mock)
+    monkeypatch.setattr(MyIonCore, "GetAccount", get_account_mock)
 
     # no pools
     get_pools_mock.return_value = []
@@ -50,13 +50,13 @@ def test_pools_list(cli, ton, monkeypatch, mocker: MockerFixture):
     assert get_account_mock.call_count == 2
 
 
-def test_delete_pool(cli, ton):
+def test_delete_pool(cli, ion):
     # Bad args
     output = cli.execute("delete_pool")
     assert "Bad args" in output
 
     pool_name = 'test_pool'
-    pool_path = ton.poolsDir + pool_name
+    pool_path = ion.poolsDir + pool_name
     create_pool_file(pool_path, b"\x00" * 32 + b'\xff\xff\xff\xff')
 
     # happy path
@@ -65,7 +65,7 @@ def test_delete_pool(cli, ton):
     assert not os.path.exists(pool_path + '.addr')
 
 
-def test_import_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_import_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("import_pool", no_color=True)
     assert "Bad args" in output
@@ -74,10 +74,10 @@ def test_import_pool(cli, ton, monkeypatch, mocker: MockerFixture):
 
     # happy path
     download_contract_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, 'DownloadContract', download_contract_mock)
+    monkeypatch.setattr(MyIonCore, 'DownloadContract', download_contract_mock)
     pool_name = "imported_pool"
     pool_addr = "Ef8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAU"
-    pool_path = ton.poolsDir + pool_name
+    pool_path = ion.poolsDir + pool_name
     addr_file = pool_path + ".addr"
     assert not os.path.exists(addr_file)
 

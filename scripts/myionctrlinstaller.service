@@ -1,0 +1,14 @@
+[Unit]
+Description=Run myionctrl installation script at startup
+#After=multi-user.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment="HOME=/root"
+Type=oneshot
+ExecStart=/install.sh -m validator -t -i -b BRANCH_NAME -n testnet
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

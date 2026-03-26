@@ -3,7 +3,7 @@ import os
 
 from modules.module import MtcModule
 from mypylib.mypylib import color_print, print_table
-from mytonctrl.console_cmd import (check_usage_no_args, check_usage_one_arg, check_usage_two_args,
+from myionctrl.console_cmd import (check_usage_no_args, check_usage_one_arg, check_usage_two_args,
     add_command, check_usage_args_len, check_usage_args_min_len, check_usage_args_lens
 )
 
@@ -18,7 +18,7 @@ class WalletModule(MtcModule):
             return
         version = "v1"
         if len(args) == 0:
-            walletName = self.ton.GenerateWalletName()
+            walletName = self.ion.GenerateWalletName()
             workchain = 0
         else:
             workchain = int(args[0])
@@ -29,7 +29,7 @@ class WalletModule(MtcModule):
             subwallet = int(args[3])
         else:
             subwallet = 698983191 + workchain  # 0x29A9A317 + workchain
-        wallet = self.ton.CreateWallet(walletName, workchain, version, subwallet=subwallet)
+        wallet = self.ion.CreateWallet(walletName, workchain, version, subwallet=subwallet)
         table = list()
         table += [["Name", "Workchain", "Address"]]
         table += [[wallet.name, wallet.workchain, wallet.addrB64_init]]
@@ -40,9 +40,9 @@ class WalletModule(MtcModule):
         wallets = self.get_wallets()
         for wallet in wallets:
             if os.path.isfile(wallet.bocFilePath):
-                account = self.ton.GetAccount(wallet.addrB64)
+                account = self.ion.GetAccount(wallet.addrB64)
                 if account.balance > 0:
-                    self.ton.SendFile(wallet.bocFilePath, wallet)
+                    self.ion.SendFile(wallet.bocFilePath, wallet)
 
     def activate_wallet(self, args):
         if not check_usage_one_arg("aw", args):
@@ -51,16 +51,16 @@ class WalletModule(MtcModule):
         if wallet_name == "--all":
             self._wallets_check()
         else:
-            wallet = self.ton.GetLocalWallet(wallet_name)
-            self.ton.ActivateWallet(wallet)
+            wallet = self.ion.GetLocalWallet(wallet_name)
+            self.ion.ActivateWallet(wallet)
         color_print("ActivateWallet - {green}OK{endc}")
 
     def get_wallets(self):
         self.local.add_log("start GetWallets function", "debug")
         wallets = list()
-        wallets_name_list = self.ton.GetWalletsNameList()
+        wallets_name_list = self.ion.GetWalletsNameList()
         for walletName in wallets_name_list:
-            wallet = self.ton.GetLocalWallet(walletName)
+            wallet = self.ion.GetLocalWallet(walletName)
             wallets.append(wallet)
         return wallets
 
@@ -74,17 +74,17 @@ class WalletModule(MtcModule):
             print("No data")
             return
         for wallet in data:
-            account = self.ton.GetAccount(wallet.addrB64)
+            account = self.ion.GetAccount(wallet.addrB64)
             if account.status != "active":
                 wallet.addrB64 = wallet.addrB64_init
             table += [[wallet.name, account.status, account.balance, wallet.version, wallet.workchain, wallet.addrB64]]
         print_table(table)
 
     def do_import_wallet(self, addr_b64, key):
-        addr_bytes = self.ton.addr_b64_to_bytes(addr_b64)
+        addr_bytes = self.ion.addr_b64_to_bytes(addr_b64)
         pk_bytes = base64.b64decode(key)
-        wallet_name = self.ton.GenerateWalletName()
-        wallet_path = self.ton.walletsDir + wallet_name
+        wallet_name = self.ion.GenerateWalletName()
+        wallet_path = self.ion.walletsDir + wallet_name
         with open(wallet_path + ".addr", 'wb') as file:
             file.write(addr_bytes)
         with open(wallet_path + ".pk", 'wb') as file:
@@ -102,11 +102,11 @@ class WalletModule(MtcModule):
         if not check_usage_two_args("swv", args):
             return
         addr, version = args[0], args[1]
-        self.ton.SetWalletVersion(addr, version)
+        self.ion.SetWalletVersion(addr, version)
         color_print("SetWalletVersion - {green}OK{endc}")
 
     def do_export_wallet(self, wallet_name):
-        wallet = self.ton.GetLocalWallet(wallet_name)
+        wallet = self.ion.GetLocalWallet(wallet_name)
         with open(wallet.privFilePath, 'rb') as file:
             data = file.read()
         key = base64.b64encode(data).decode("utf-8")
@@ -128,7 +128,7 @@ class WalletModule(MtcModule):
         if input("Are you sure you want to delete this wallet (yes/no): ") != "yes":
             print("Cancel wallet deletion")
             return
-        wallet = self.ton.GetLocalWallet(wallet_name)
+        wallet = self.ion.GetLocalWallet(wallet_name)
         wallet.Delete()
         color_print("DeleteWallet - {green}OK{endc}")
 
@@ -137,20 +137,20 @@ class WalletModule(MtcModule):
             return
         wallet_name, destination, amount = args[0], args[1], args[2]
         flags = args[3:]
-        wallet = self.ton.GetLocalWallet(wallet_name)
-        destination = self.ton.get_destination_addr(destination)
-        self.ton.MoveCoins(wallet, destination, amount, flags=flags)
+        wallet = self.ion.GetLocalWallet(wallet_name)
+        destination = self.ion.get_destination_addr(destination)
+        self.ion.MoveCoins(wallet, destination, amount, flags=flags)
         color_print("MoveCoins - {green}OK{endc}")
 
     def do_move_coins_through_proxy(self, wallet, dest, coins):
         self.local.add_log("start MoveCoinsThroughProxy function", "debug")
-        wallet1 = self.ton.CreateWallet("proxy_wallet1", 0)
-        wallet2 = self.ton.CreateWallet("proxy_wallet2", 0)
-        self.ton.MoveCoins(wallet, wallet1.addrB64_init, coins)
-        self.ton.ActivateWallet(wallet1)
-        self.ton.MoveCoins(wallet1, wallet2.addrB64_init, "alld")
-        self.ton.ActivateWallet(wallet2)
-        self.ton.MoveCoins(wallet2, dest, "alld", flags=["-n"])
+        wallet1 = self.ion.CreateWallet("proxy_wallet1", 0)
+        wallet2 = self.ion.CreateWallet("proxy_wallet2", 0)
+        self.ion.MoveCoins(wallet, wallet1.addrB64_init, coins)
+        self.ion.ActivateWallet(wallet1)
+        self.ion.MoveCoins(wallet1, wallet2.addrB64_init, "alld")
+        self.ion.ActivateWallet(wallet2)
+        self.ion.MoveCoins(wallet2, dest, "alld", flags=["-n"])
         wallet1.Delete()
         wallet2.Delete()
 
@@ -158,8 +158,8 @@ class WalletModule(MtcModule):
         if not check_usage_args_len("mgtp", args, 3):
             return
         wallet_name, destination, amount = args[0], args[1], args[2]
-        wallet = self.ton.GetLocalWallet(wallet_name)
-        destination = self.ton.get_destination_addr(destination)
+        wallet = self.ion.GetLocalWallet(wallet_name)
+        destination = self.ion.get_destination_addr(destination)
         self.do_move_coins_through_proxy(wallet, destination, amount)
         color_print("MoveCoinsThroughProxy - {green}OK{endc}")
 

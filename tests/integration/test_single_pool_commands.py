@@ -4,12 +4,12 @@ import struct
 import pytest
 from pytest_mock import MockerFixture
 from mypylib import Dict
-from mytoncore.mytoncore import MyTonCore
+from myioncore.myioncore import MyIonCore
 from modules.single_pool import SingleNominatorModule
 from tests.helpers import create_pool_file
 
 
-def test_new_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_new_single_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("new_single_pool", no_color=True)
     assert "Bad args" in output
@@ -19,8 +19,8 @@ def test_new_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     # happy path
     download_contract_mock = mocker.Mock()
     get_validator_wallet_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "DownloadContract", download_contract_mock)
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", get_validator_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "DownloadContract", download_contract_mock)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", get_validator_wallet_mock)
 
     def fake_fift_run(args):
         file_path = args[-1]
@@ -28,10 +28,10 @@ def test_new_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
             f.write(b'\x00'*36)
         return "Saved single nominator pool"
 
-    monkeypatch.setattr(ton.fift, "Run", fake_fift_run)
+    monkeypatch.setattr(ion.fift, "Run", fake_fift_run)
 
     pool_name = "test_single_pool"
-    pool_path = ton.poolsDir + pool_name
+    pool_path = ion.poolsDir + pool_name
     addr_file = pool_path + ".addr"
     owner_address = "owner_address"
 
@@ -54,13 +54,13 @@ def test_new_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     assert 'Pool with the same parameters already exists' in output
 
 
-def test_activate_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_activate_single_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("activate_single_pool", no_color=True)
     assert "Bad args" in output
 
     pool_name = "test_activate_single_pool"
-    pool_path = ton.poolsDir + pool_name
+    pool_path = ion.poolsDir + pool_name
     create_pool_file(pool_path, b'\x00' * 36)
 
     boc_file = pool_path + "-query.boc"
@@ -70,15 +70,15 @@ def test_activate_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     get_validator_wallet_mock = mocker.Mock()
     validator_wallet = get_validator_wallet_mock.return_value
     check_account_active_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", get_validator_wallet_mock)
-    monkeypatch.setattr(MyTonCore, "check_account_active", check_account_active_mock)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", get_validator_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "check_account_active", check_account_active_mock)
 
     result_file_path = "/tmp/signed.boc"
     sign_boc_mock = mocker.Mock(return_value=result_file_path)
-    monkeypatch.setattr(MyTonCore, "SignBocWithWallet", sign_boc_mock)
+    monkeypatch.setattr(MyIonCore, "SignBocWithWallet", sign_boc_mock)
 
     send_file_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "SendFile", send_file_mock)
+    monkeypatch.setattr(MyIonCore, "SendFile", send_file_mock)
 
     output = cli.execute(f"activate_single_pool {pool_name}", no_color=True)
 
@@ -112,7 +112,7 @@ def test_activate_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     send_file_mock.assert_not_called()
 
 
-def test_withdraw_from_single_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_withdraw_from_single_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("withdraw_from_single_pool", no_color=True)
     assert "Bad args" in output
@@ -121,7 +121,7 @@ def test_withdraw_from_single_pool(cli, ton, monkeypatch, mocker: MockerFixture)
 
     # happy path
     withdraw_from_pool_process_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "WithdrawFromPoolProcess", withdraw_from_pool_process_mock)
+    monkeypatch.setattr(MyIonCore, "WithdrawFromPoolProcess", withdraw_from_pool_process_mock)
     pool_addr = "test_addr"
     amount = 250.75
     output = cli.execute(f"withdraw_from_single_pool {pool_addr} {amount}", no_color=True)

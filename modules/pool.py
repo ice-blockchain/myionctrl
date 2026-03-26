@@ -2,7 +2,7 @@ import os
 
 from mypylib.mypylib import color_print, print_table
 from modules.module import MtcModule
-from mytonctrl.console_cmd import add_command, check_usage_one_arg, check_usage_two_args
+from myionctrl.console_cmd import add_command, check_usage_one_arg, check_usage_two_args
 
 
 class PoolModule(MtcModule):
@@ -13,15 +13,15 @@ class PoolModule(MtcModule):
     def print_pools_list(self, args):
         table = list()
         table += [["Name", "Status", "Balance", "Version", "Address"]]
-        data = self.ton.GetPools()
+        data = self.ion.GetPools()
         if data is None or len(data) == 0:
             print("No data")
             return
         for pool in data:
-            account = self.ton.GetAccount(pool.addrB64)
+            account = self.ion.GetAccount(pool.addrB64)
             if account.status != "active":
                 pool.addrB64 = pool.addrB64_init
-            version = self.ton.GetVersionFromCodeHash(account.codeHash)
+            version = self.ion.GetVersionFromCodeHash(account.codeHash)
             table += [[pool.name, account.status, account.balance, version, pool.addrB64]]
         print_table(table)
 
@@ -29,14 +29,14 @@ class PoolModule(MtcModule):
         if not check_usage_one_arg("delete_pool", args):
             return
         pool_name = args[0]
-        pool = self.ton.GetLocalPool(pool_name)
+        pool = self.ion.GetLocalPool(pool_name)
         pool.Delete()
         color_print("DeletePool - {green}OK{endc}")
 
     def do_import_pool(self, pool_name, addr_b64):
         self.check_download_pool_contract_scripts()
-        addr_bytes = self.ton.addr_b64_to_bytes(addr_b64)
-        pool_path = self.ton.poolsDir + pool_name
+        addr_bytes = self.ion.addr_b64_to_bytes(addr_b64)
+        pool_path = self.ion.poolsDir + pool_name
         with open(pool_path + ".addr", 'wb') as file:
             file.write(addr_bytes)
     # end define
@@ -50,9 +50,9 @@ class PoolModule(MtcModule):
         color_print("import_pool - {green}OK{endc}")
 
     def check_download_pool_contract_scripts(self):
-        contract_path = self.ton.contractsDir + "nominator-pool/"
+        contract_path = self.ion.contractsDir + "nominator-pool/"
         if not os.path.isdir(contract_path):
-            self.ton.DownloadContract("https://github.com/ton-blockchain/nominator-pool")
+            self.ion.DownloadContract("https://github.com/ice-blockchain/nominator-pool")
 
     def add_console_commands(self, console):
         add_command(self.local, console, "pools_list", self.print_pools_list)

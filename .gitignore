@@ -111,7 +111,7 @@ venv.bak/
 .idea/inspectionProfiles/
 .idea/misc.xml
 .idea/modules.xml
-.idea/ton_client.iml
+.idea/ion_client.iml
 .idea/vcs.xml
 
 *.DS_Store

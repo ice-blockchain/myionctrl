@@ -4,14 +4,14 @@ import time
 from modules.btc_teleport import BtcTeleportModule
 from mypylib.mypylib import color_print, get_timestamp
 from modules.module import MtcModule
-from mytoncore.utils import hex_shard_to_int, hex2b64
-from mytonctrl.console_cmd import check_usage_two_args, add_command, check_usage_args_min_max_len
+from myioncore.utils import hex_shard_to_int, hex2b64
+from myionctrl.console_cmd import check_usage_two_args, add_command, check_usage_args_min_max_len
 
-from mytonctrl.utils import timestamp2utcdatetime, GetColorInt, pop_arg_from_args, is_hex
+from myionctrl.utils import timestamp2utcdatetime, GetColorInt, pop_arg_from_args, is_hex
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from mytoncore import MyTonCore
+    from myioncore import MyIonCore
 
 
 class ValidatorModule(MtcModule):
@@ -24,18 +24,18 @@ class ValidatorModule(MtcModule):
     def vote_offer(self, args):
         if not check_usage_args_min_max_len("vo", args, min_len=1, max_len=1000):
             return
-        offers = self.ton.GetOffers()
+        offers = self.ion.GetOffers()
         for offer_hash in args:
-            offer = self.ton.GetOffer(offer_hash, offers)
-            self.ton.add_save_offer(offer)
+            offer = self.ion.GetOffer(offer_hash, offers)
+            self.ion.add_save_offer(offer)
         for offer_hash in args:
-            offer = self.ton.GetOffer(offer_hash, offers)
-            self.ton.VoteOffer(offer)
+            offer = self.ion.GetOffer(offer_hash, offers)
+            self.ion.VoteOffer(offer)
         color_print("VoteOffer - {green}OK{endc}")
 
     def vote_election_entry(self, args):
-        from mytoncore.functions import Elections
-        Elections(self.ton.local, self.ton)
+        from myioncore.functions import Elections
+        Elections(self.ion.local, self.ion)
         color_print("VoteElectionEntry - {green}OK{endc}")
 
     def vote_complaint(self, args):
@@ -43,11 +43,11 @@ class ValidatorModule(MtcModule):
             return
         election_id = args[0]
         complaint_hash = args[1]
-        self.ton.VoteComplaint(election_id, complaint_hash)
+        self.ion.VoteComplaint(election_id, complaint_hash)
         color_print("VoteComplaint - {green}OK{endc}")
 
     def find_myself(self, validators: list) -> dict:
-        adnl_addr = self.ton.GetAdnlAddr()
+        adnl_addr = self.ion.GetAdnlAddr()
         for validator in validators:
             if validator.get("adnlAddr") == adnl_addr:
                 return validator
@@ -55,11 +55,11 @@ class ValidatorModule(MtcModule):
 
     def check_efficiency(self, args):
         self.local.add_log("start GetValidatorEfficiency function", "debug")
-        previous_validators = self.ton.GetValidatorsList(past=True)
-        validators = self.ton.GetValidatorsList()
+        previous_validators = self.ion.GetValidatorsList(past=True)
+        validators = self.ion.GetValidatorsList()
         validator = self.find_myself(previous_validators)
-        config32 = self.ton.GetConfig32()
-        config34 = self.ton.GetConfig34()
+        config32 = self.ion.GetConfig32()
+        config34 = self.ion.GetConfig34()
         color_print("{cyan}===[ Validator efficiency ]==={endc}")
         start_time = timestamp2utcdatetime(config32.startWorkTime)
         end_time = timestamp2utcdatetime(config32.endWorkTime)
@@ -103,24 +103,24 @@ class ValidatorModule(MtcModule):
     # end define
 
     def get_my_complaint(self):
-        config32 = self.ton.GetConfig32()
-        save_complaints = self.ton.GetSaveComplaints()
+        config32 = self.ion.GetConfig32()
+        save_complaints = self.ion.GetSaveComplaints()
         complaints = save_complaints.get(str(config32['startWorkTime']))
         if not complaints:
             return
         for c in complaints.values():
-            if c["adnl"] == self.ton.GetAdnlAddr() and c["isPassed"]:
+            if c["adnl"] == self.ion.GetAdnlAddr() and c["isPassed"]:
                 return c
 
     @classmethod
-    def check_enable(cls, ton: "MyTonCore"):
-        if ton.using_liteserver():
+    def check_enable(cls, ion: "MyIonCore"):
+        if ion.using_liteserver():
             raise Exception('Cannot enable validator mode while liteserver mode is enabled. '
                             'Use `disable_mode liteserver` first.')
-        if ton.using_collator():
+        if ion.using_collator():
             raise Exception('Cannot enable validator mode while collator mode is enabled. '
                             'Use `disable_mode collator` first.')
-        BtcTeleportModule(ton, ton.local).init()
+        BtcTeleportModule(ion, ion.local).init()
 
     @staticmethod
     def _parse_collators_list(output: str) -> dict:
@@ -148,16 +148,16 @@ class ValidatorModule(MtcModule):
         return result
 
     def get_collators_list(self):
-        result = self.ton.validatorConsole.Run('show-collators-list')
+        result = self.ion.validatorConsole.Run('show-collators-list')
         if 'collators list is empty' in result:
             return {}
         return self._parse_collators_list(result)
 
     def set_collators_list(self, collators_list: dict):
-        fname = self.ton.tempDir + '/collators_list.json'
+        fname = self.ion.tempDir + '/collators_list.json'
         with open(fname, 'w') as f:
             f.write(json.dumps(collators_list))
-        result = self.ton.validatorConsole.Run(f'set-collators-list {fname}')
+        result = self.ion.validatorConsole.Run(f'set-collators-list {fname}')
         if 'success' not in result:
             raise Exception(f'Failed to set collators list: {result}')
 
@@ -236,7 +236,7 @@ class ValidatorModule(MtcModule):
         color_print("delete_collator - {green}OK{endc}")
 
     def get_collators_stats(self):
-        output = self.ton.validatorConsole.Run('collation-manager-stats')
+        output = self.ion.validatorConsole.Run('collation-manager-stats')
         if 'No stats' in output:
             return {}
         result = {}
@@ -253,7 +253,7 @@ class ValidatorModule(MtcModule):
         if '--json' in args:
             print(json.dumps(self.get_collators_list(), indent=2))
         else:
-            result = self.ton.validatorConsole.Run('show-collators-list')
+            result = self.ion.validatorConsole.Run('show-collators-list')
             result = result.split('conn ready')[1].strip()
             if 'collators list is empty' in result:
                 print("No collators found")
@@ -269,7 +269,7 @@ class ValidatorModule(MtcModule):
         if not self.get_collators_list():
             color_print("{red}No collators to reset.{endc}")
             return
-        result = self.ton.validatorConsole.Run('clear-collators-list')
+        result = self.ion.validatorConsole.Run('clear-collators-list')
         if 'success' not in result:
             raise Exception(f'Failed to reset collators list: {result}')
         color_print("reset_collators - {green}OK{endc}")

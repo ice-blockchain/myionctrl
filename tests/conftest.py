@@ -5,8 +5,8 @@ import pytest
 from typing import Protocol
 
 from mypyconsole.mypyconsole import MyPyConsole
-from mytoncore.mytoncore import MyTonCore
-from mytonctrl.mytonctrl import Init
+from myioncore.myioncore import MyIonCore
+from myionctrl.myionctrl import Init
 from mypylib.mypylib import MyPyClass, dir as ensure_dir, Dict
 from tests.helpers import remove_colors
 
@@ -48,34 +48,34 @@ def local(tmp_path):
     local = TestLocal(file_path=file_path, work_dir=work_dir, temp_dir=temp_dir)
 
     local.db["liteClient"] = {
-      "appPath": "/usr/bin/ton/lite-client/lite-client",
-      "configPath": "/usr/bin/ton/global.config.json",
+      "appPath": "/usr/bin/ion/lite-client/lite-client",
+      "configPath": "/usr/bin/ion/global.config.json",
       "liteServer": {
-        "pubkeyPath": "/var/ton-work/keys/liteserver.pub",
+        "pubkeyPath": "/var/ion-work/keys/liteserver.pub",
         "ip": "127.0.0.1",
         "port": 33333
       }
     }
     local.db["validatorConsole"] = {
-      "appPath": "/usr/bin/ton/validator-engine-console/validator-engine-console",
-      "privKeyPath": "/var/ton-work/keys/client",
-      "pubKeyPath": "/var/ton-work/keys/server.pub",
+      "appPath": "/usr/bin/ion/validator-engine-console/validator-engine-console",
+      "privKeyPath": "/var/ion-work/keys/client",
+      "pubKeyPath": "/var/ion-work/keys/server.pub",
       "addr": "127.0.0.1:44444"
     }
     local.db["fift"] = {
-      "appPath": "/usr/bin/ton/crypto/fift",
-      "libsPath": "/usr/src/ton/crypto/fift/lib",
-      "smartcontsPath": "/usr/src/ton/crypto/smartcont"
+      "appPath": "/usr/bin/ion/crypto/fift",
+      "libsPath": "/usr/src/ion/crypto/fift/lib",
+      "smartcontsPath": "/usr/src/ion/crypto/smartcont"
     }
     return local
 
 
 @pytest.fixture()
-def ton(local, monkeypatch):
-    monkeypatch.setattr(MyTonCore, "create_self_db_backup", lambda self: None)
-    monkeypatch.setattr(MyTonCore, "GetNetworkName", lambda self: "mainnet")
+def ion(local, monkeypatch):
+    monkeypatch.setattr(MyIonCore, "create_self_db_backup", lambda self: None)
+    monkeypatch.setattr(MyIonCore, "GetNetworkName", lambda self: "mainnet")
     monkeypatch.setattr(TestLocal, 'save', lambda *args, **kwargs: None)
-    return MyTonCore(local)
+    return MyIonCore(local)
 
 
 class ConsoleProtocol(Protocol):
@@ -107,13 +107,13 @@ class TestMyPyConsole(MyPyConsole):
 
 
 @pytest.fixture()
-def cli(local, ton) -> TestMyPyConsole:
+def cli(local, ion) -> TestMyPyConsole:
     console = TestMyPyConsole()
     mp = pytest.MonkeyPatch()
-    mp.setattr(MyTonCore, "using_pool", lambda self: True)
-    mp.setattr(MyTonCore, "using_nominator_pool", lambda self: True)
-    mp.setattr(MyTonCore, "using_single_nominator", lambda self: True)
-    Init(local, ton, console, argv=[])
+    mp.setattr(MyIonCore, "using_pool", lambda self: True)
+    mp.setattr(MyIonCore, "using_nominator_pool", lambda self: True)
+    mp.setattr(MyIonCore, "using_single_nominator", lambda self: True)
+    Init(local, ion, console, argv=[])
     mp.undo()
     # console.debug = True
     return console

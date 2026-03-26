@@ -7,16 +7,16 @@ import pytest
 import requests
 from pytest_mock import MockerFixture
 
-from mytoncore.utils import get_package_resource_path
-from mytonctrl import mytonctrl as mytonctrl_module
+from myioncore.utils import get_package_resource_path
+from myionctrl import myionctrl as myionctrl_module
 from mypylib.mypylib import MyPyClass
 from mypylib.mypylib import Dict
-from mytoncore.mytoncore import MyTonCore
+from myioncore.myioncore import MyIonCore
 import sys
 from pathlib import Path
 
-# def run_mytonctrl_cli(args: str, env=None, timeout=3):
-#     cmd = [sys.executable, "-m", "mytonctrl"]
+# def run_myionctrl_cli(args: str, env=None, timeout=3):
+#     cmd = [sys.executable, "-m", "myionctrl"]
 #     result = subprocess.run(
 #         cmd,
 #         input=args,
@@ -47,16 +47,16 @@ def test_update(cli, monkeypatch, mocker):
     exit_mock = mocker.Mock()
     monkeypatch.setattr(MyPyClass, "exit", exit_mock)
 
-    monkeypatch.setattr(mytonctrl_module, "check_git", lambda args, default_repo, text: ("author", "repo", "branch", None))
+    monkeypatch.setattr(myionctrl_module, "check_git", lambda args, default_repo, text: ("author", "repo", "branch", None))
 
     calls = {}
     def fake_run_as_root(run_args):
         calls["run_args"] = run_args
         return 0
-    monkeypatch.setattr(mytonctrl_module, "run_as_root", fake_run_as_root)
+    monkeypatch.setattr(myionctrl_module, "run_as_root", fake_run_as_root)
 
     output = cli.execute("update")
-    with get_package_resource_path('mytonctrl', 'scripts/update.sh') as upd_path:
+    with get_package_resource_path('myionctrl', 'scripts/update.sh') as upd_path:
         assert upd_path.is_file()
     assert "Error" not in output
     assert calls["run_args"] == ['bash', upd_path, '-a', 'author', '-r', 'repo', '-b', 'branch']
@@ -64,50 +64,50 @@ def test_update(cli, monkeypatch, mocker):
 
 
 def test_upgrade(cli, monkeypatch):
-    monkeypatch.setattr(mytonctrl_module, "check_git", lambda args, default_repo, text: ("author", "repo", "branch", None))
+    monkeypatch.setattr(myionctrl_module, "check_git", lambda args, default_repo, text: ("author", "repo", "branch", None))
 
     calls = {}
     def fake_run_as_root(run_args):
         calls["run_args"] = run_args
         return 0
 
-    monkeypatch.setattr(mytonctrl_module, "run_as_root", fake_run_as_root)
-    monkeypatch.setattr(mytonctrl_module, "get_clang_major_version", lambda: 21)
-    monkeypatch.setattr(MyTonCore, "using_validator", lambda self: False)
-    with get_package_resource_path('mytonctrl', 'scripts/upgrade.sh') as upg_path:
+    monkeypatch.setattr(myionctrl_module, "run_as_root", fake_run_as_root)
+    monkeypatch.setattr(myionctrl_module, "get_clang_major_version", lambda: 21)
+    monkeypatch.setattr(MyIonCore, "using_validator", lambda self: False)
+    with get_package_resource_path('myionctrl', 'scripts/upgrade.sh') as upg_path:
         assert upg_path.is_file()
 
     def fake_GetSettings(self, name):
         if name == "liteClient":
-            return {"configPath": "lite-client/ton-lite-client-test1.config.json", "liteServer": {"pubkeyPath": "/usr/bin/ton/old.pub"}}
+            return {"configPath": "lite-client/ion-lite-client-test1.config.json", "liteServer": {"pubkeyPath": "/usr/bin/ion/old.pub"}}
         if name == "validatorConsole":
-            return {"privKeyPath": "/usr/bin/ton/client", "pubKeyPath": "/usr/bin/ton/server.pub"}
+            return {"privKeyPath": "/usr/bin/ion/client", "pubKeyPath": "/usr/bin/ion/server.pub"}
         return {}
 
     captured_settings = {}
     def fake_SetSettings(self, name, value):
         captured_settings[name] = value
 
-    monkeypatch.setattr(MyTonCore, "GetSettings", fake_GetSettings)
-    monkeypatch.setattr(MyTonCore, "SetSettings", fake_SetSettings)
+    monkeypatch.setattr(MyIonCore, "GetSettings", fake_GetSettings)
+    monkeypatch.setattr(MyIonCore, "SetSettings", fake_SetSettings)
 
     output = cli.execute("upgrade")
     assert "Upgrade - \x1b[32mOK\x1b" in output
     assert "Error" not in output
     assert captured_settings["liteClient"]["configPath"] == "global.config.json"
-    assert captured_settings["liteClient"]["liteServer"]["pubkeyPath"] == "/var/ton-work/keys/liteserver.pub"
+    assert captured_settings["liteClient"]["liteServer"]["pubkeyPath"] == "/var/ion-work/keys/liteserver.pub"
     assert calls["run_args"] == ["bash", upg_path, "-a", "author", "-r", "repo", "-b", "branch"]
 
     # clang version is < 21, abort
     calls = {}
-    monkeypatch.setattr(mytonctrl_module, "get_clang_major_version", lambda: 14)
+    monkeypatch.setattr(myionctrl_module, "get_clang_major_version", lambda: 14)
     monkeypatch.setattr('builtins.input', lambda _: "n")
     output = cli.execute("upgrade")
     assert "aborted." in output
     assert not calls
 
     # clang version is < 21, proceed
-    monkeypatch.setattr(mytonctrl_module, "get_clang_major_version", lambda: 14)
+    monkeypatch.setattr(myionctrl_module, "get_clang_major_version", lambda: 14)
     monkeypatch.setattr('builtins.input', lambda _: "y")
     output = cli.execute("upgrade")
     assert "Upgrade - \x1b[32mOK\x1b" in output
@@ -115,16 +115,16 @@ def test_upgrade(cli, monkeypatch):
     assert calls["run_args"] == ["bash", upg_path, "-a", "author", "-r", "repo", "-b", "branch"]
 
     # call upgrade_btc_teleport if using validator
-    monkeypatch.setattr(mytonctrl_module, "get_clang_major_version", lambda: 21)
+    monkeypatch.setattr(myionctrl_module, "get_clang_major_version", lambda: 21)
     calls = {}
-    monkeypatch.setattr(MyTonCore, "using_validator", lambda self: True)
+    monkeypatch.setattr(MyIonCore, "using_validator", lambda self: True)
     teleport_calls = {}
-    def fake_upgrade_btc_teleport(local, ton, reinstall=False, branch="master", user=None):
+    def fake_upgrade_btc_teleport(local, ion, reinstall=False, branch="master", user=None):
         teleport_calls["called"] = True
         teleport_calls["reinstall"] = reinstall
         teleport_calls["branch"] = branch
         teleport_calls["user"] = user
-    monkeypatch.setattr(mytonctrl_module, "upgrade_btc_teleport", fake_upgrade_btc_teleport)
+    monkeypatch.setattr(myionctrl_module, "upgrade_btc_teleport", fake_upgrade_btc_teleport)
     output = cli.execute("upgrade", no_color=True)
     assert teleport_calls.get("called") is True
     assert teleport_calls.get("reinstall") is False
@@ -132,25 +132,25 @@ def test_upgrade(cli, monkeypatch):
     assert "Error" not in output
     assert calls["run_args"] == ["bash", upg_path, "-a", "author", "-r", "repo", "-b", "branch"]
 
-    monkeypatch.setattr(mytonctrl_module, "run_as_root", lambda _: 1)
+    monkeypatch.setattr(myionctrl_module, "run_as_root", lambda _: 1)
     output = cli.execute("upgrade", no_color=True)
     assert "Upgrade - Error" in output
 
 
 def test_upgrade_btc_teleport(cli, monkeypatch, mocker: MockerFixture):
     teleport_calls = {}
-    def fake_upgrade_btc_teleport(local, ton, reinstall=False, branch="master", user=None):
+    def fake_upgrade_btc_teleport(local, ion, reinstall=False, branch="master", user=None):
         teleport_calls["called"] = True
         teleport_calls["reinstall"] = reinstall
         teleport_calls["branch"] = branch
         teleport_calls["user"] = user
 
-    monkeypatch.setattr(mytonctrl_module, "upgrade_btc_teleport", fake_upgrade_btc_teleport)
+    monkeypatch.setattr(myionctrl_module, "upgrade_btc_teleport", fake_upgrade_btc_teleport)
 
     run_as_root_mocker = mocker.Mock()
-    monkeypatch.setattr(mytonctrl_module, "run_as_root", run_as_root_mocker)
+    monkeypatch.setattr(myionctrl_module, "run_as_root", run_as_root_mocker)
     check_git_mocker = mocker.Mock()
-    monkeypatch.setattr(mytonctrl_module, "check_git", check_git_mocker)
+    monkeypatch.setattr(myionctrl_module, "check_git", check_git_mocker)
 
     output = cli.execute("upgrade --btc-teleport dev -u alice")
 
@@ -172,7 +172,7 @@ def test_installer(cli, monkeypatch):
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     output = cli.execute("installer cmd arg1 arg2")
-    assert calls["args"] == ["python3", "-m", "mytoninstaller", '-c',  "cmd arg1 arg2"]
+    assert calls["args"] == ["python3", "-m", "myioninstaller", '-c',  "cmd arg1 arg2"]
     assert "Error" not in output
 
 
@@ -187,15 +187,15 @@ def test_status(cli, monkeypatch, mocker: MockerFixture):
     status_mocker.validator_groups_master = 1
     status_mocker.validator_groups_shard = 2
 
-    monkeypatch.setattr(MyTonCore, "GetValidatorStatus", lambda *_: status_mocker)
-    monkeypatch.setattr(MyTonCore, "get_adnl_addr", lambda *_: "1234ABCD", raising=False)
-    monkeypatch.setattr(MyTonCore, "GetAdnlAddr", lambda *_: "1234ABCD", raising=False)
-    monkeypatch.setattr(MyTonCore, "using_validator", lambda *_: True)
+    monkeypatch.setattr(MyIonCore, "GetValidatorStatus", lambda *_: status_mocker)
+    monkeypatch.setattr(MyIonCore, "get_adnl_addr", lambda *_: "1234ABCD", raising=False)
+    monkeypatch.setattr(MyIonCore, "GetAdnlAddr", lambda *_: "1234ABCD", raising=False)
+    monkeypatch.setattr(MyIonCore, "using_validator", lambda *_: True)
     validator_wallet = mocker.Mock()
     validator_wallet.addrB64 = "WALLET_ADDR"
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", lambda *_: validator_wallet)
-    monkeypatch.setattr(MyTonCore, "GetDbSize", lambda *_: 123456)
-    monkeypatch.setattr(MyTonCore, "GetDbUsage", lambda *_: 123456)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", lambda *_: validator_wallet)
+    monkeypatch.setattr(MyIonCore, "GetDbSize", lambda *_: 123456)
+    monkeypatch.setattr(MyIonCore, "GetDbUsage", lambda *_: 123456)
 
     def fake_GetSettings(self, name):
         if name == "statistics":
@@ -207,19 +207,19 @@ def test_status(cli, monkeypatch, mocker: MockerFixture):
             return {}
         return [-1, -1, -1]
 
-    monkeypatch.setattr(MyTonCore, "GetSettings", fake_GetSettings)
-    monkeypatch.setattr(MyTonCore, "GetStatistics", fake_GetStatistics)
+    monkeypatch.setattr(MyIonCore, "GetSettings", fake_GetSettings)
+    monkeypatch.setattr(MyIonCore, "GetStatistics", fake_GetStatistics)
     vconfig_mock = mocker.Mock()
     vconfig_mock.fullnode = base64.b64encode(b"\x01\x02\x03\x04").decode()
-    monkeypatch.setattr(MyTonCore, "GetValidatorConfig", lambda *_: vconfig_mock)
-    monkeypatch.setattr(MyTonCore, "get_validator_engine_ip", lambda *_: '127.0.0.1')
+    monkeypatch.setattr(MyIonCore, "GetValidatorConfig", lambda *_: vconfig_mock)
+    monkeypatch.setattr(MyIonCore, "get_validator_engine_ip", lambda *_: '127.0.0.1')
 
-    monkeypatch.setattr(mytonctrl_module, 'get_git_hash', lambda *_, **__: 'abcd')
-    monkeypatch.setattr(mytonctrl_module, 'get_git_branch', lambda *_: 'master')
-    monkeypatch.setattr(mytonctrl_module, 'GetBinGitHash', lambda *_, **__: 'abcd')
-    monkeypatch.setattr(mytonctrl_module, 'fix_git_config', lambda *_: None)
-    monkeypatch.setattr(mytonctrl_module, 'get_service_status', lambda *_: True)
-    monkeypatch.setattr(mytonctrl_module, 'get_service_uptime', lambda *_: 1000)
+    monkeypatch.setattr(myionctrl_module, 'get_git_hash', lambda *_, **__: 'abcd')
+    monkeypatch.setattr(myionctrl_module, 'get_git_branch', lambda *_: 'master')
+    monkeypatch.setattr(myionctrl_module, 'GetBinGitHash', lambda *_, **__: 'abcd')
+    monkeypatch.setattr(myionctrl_module, 'fix_git_config', lambda *_: None)
+    monkeypatch.setattr(myionctrl_module, 'get_service_status', lambda *_: True)
+    monkeypatch.setattr(myionctrl_module, 'get_service_uptime', lambda *_: 1000)
 
     output = cli.execute("status", no_color=True)
     assert 'Error' not in output
@@ -228,7 +228,7 @@ def test_status(cli, monkeypatch, mocker: MockerFixture):
     assert 'ADNL address of local validator: 1234ABCD' in output
     assert 'Public ADNL address of node: 01020304' in output
     assert 'Local validator wallet address: WALLET_ADDR' in output
-    assert 'Mytoncore status: working, 16 minutes' in output
+    assert 'Myioncore status: working, 16 minutes' in output
     assert 'Local validator status: working, 16 minutes' in output
     assert 'BTC Teleport status: working, 16 minutes' in output
     assert 'Local validator out of sync: 30' in output
@@ -237,72 +237,72 @@ def test_status(cli, monkeypatch, mocker: MockerFixture):
     assert 'Local validator last state serialization: 10 blocks ago' in output
     assert 'Active validator groups (masterchain,shardchain): 1,2' in output
     assert 'Local validator database size: 123456 Gb, 123456%' in output
-    assert 'Version mytonctrl: abcd (master)' in output
+    assert 'Version myionctrl: abcd (master)' in output
     assert 'Version validator: abcd (master)' in output
     assert 'Version BTC Teleport: n/a (n/a)' in output
 
     # all status
     status_mocker.out_of_sync = 10
 
-    monkeypatch.setattr(MyTonCore, "GetNetworkName", lambda *_: 'mainnet')
-    monkeypatch.setattr(MyTonCore, "GetOnlineValidators", lambda *_: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    monkeypatch.setattr(MyTonCore, "get_root_workchain_enabled_time", lambda *_: 1234, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetRootWorkchainEnabledTime", lambda *_: 1234, raising=False)
-    monkeypatch.setattr(MyTonCore, "get_config_34", lambda _: {"totalValidators": 100, "startWorkTime": 0}, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetConfig34", lambda _: {"totalValidators": 100, "startWorkTime": 0}, raising=False)
-    monkeypatch.setattr(MyTonCore, "get_config_36", lambda _: {"startWorkTime": None}, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetConfig36", lambda _: {"startWorkTime": None}, raising=False)
-    monkeypatch.setattr(MyTonCore, "get_shards", lambda *_: [1, 2, 3], raising=False)
-    monkeypatch.setattr(MyTonCore, "GetShards", lambda *_: [1, 2, 3], raising=False)
-    monkeypatch.setattr(MyTonCore, "get_config", lambda *_: {'validators_elected_for': 65536, 'elections_start_before': 32768, 'elections_end_before': 8192, 'stake_held_for': 32768}, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetConfig", lambda *_: {'validators_elected_for': 65536, 'elections_start_before': 32768, 'elections_end_before': 8192, 'stake_held_for': 32768}, raising=False)
-    monkeypatch.setattr(MyTonCore, "get_config_17", lambda *_: {'minStake': 10000.0, 'maxStake': 10000000.0, 'maxStakeFactor': 1966080, 'minTotalStake': 200000.0}, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetConfig17", lambda *_: {'minStake': 10000.0, 'maxStake': 10000000.0, 'maxStakeFactor': 1966080, 'minTotalStake': 200000.0}, raising=False)
-    monkeypatch.setattr(MyTonCore, "get_full_config_addr", lambda *_: 'config_addr', raising=False)
-    monkeypatch.setattr(MyTonCore, "GetFullConfigAddr", lambda *_: 'config_addr', raising=False)
-    monkeypatch.setattr(MyTonCore, "get_full_elector_addr", lambda *_: 'elector_addr', raising=False)
-    monkeypatch.setattr(MyTonCore, "GetFullElectorAddr", lambda *_: 'elector_addr', raising=False)
-    monkeypatch.setattr(MyTonCore, "get_active_election_id", lambda *_: 0, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetActiveElectionId", lambda *_: 0, raising=False)
-    monkeypatch.setattr(MyTonCore, "GetValidatorIndex", lambda *_: 10)
-    monkeypatch.setattr(MyTonCore, "GetOffersNumber", lambda *_: None)
-    monkeypatch.setattr(MyTonCore, "GetComplaintsNumber", lambda *_: None)
-    monkeypatch.setattr(MyTonCore, "GetAccount", lambda *_: Dict({"balance": 1000}))
+    monkeypatch.setattr(MyIonCore, "GetNetworkName", lambda *_: 'mainnet')
+    monkeypatch.setattr(MyIonCore, "GetOnlineValidators", lambda *_: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    monkeypatch.setattr(MyIonCore, "get_root_workchain_enabled_time", lambda *_: 1234, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetRootWorkchainEnabledTime", lambda *_: 1234, raising=False)
+    monkeypatch.setattr(MyIonCore, "get_config_34", lambda _: {"totalValidators": 100, "startWorkTime": 0}, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetConfig34", lambda _: {"totalValidators": 100, "startWorkTime": 0}, raising=False)
+    monkeypatch.setattr(MyIonCore, "get_config_36", lambda _: {"startWorkTime": None}, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetConfig36", lambda _: {"startWorkTime": None}, raising=False)
+    monkeypatch.setattr(MyIonCore, "get_shards", lambda *_: [1, 2, 3], raising=False)
+    monkeypatch.setattr(MyIonCore, "GetShards", lambda *_: [1, 2, 3], raising=False)
+    monkeypatch.setattr(MyIonCore, "get_config", lambda *_: {'validators_elected_for': 65536, 'elections_start_before': 32768, 'elections_end_before': 8192, 'stake_held_for': 32768}, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetConfig", lambda *_: {'validators_elected_for': 65536, 'elections_start_before': 32768, 'elections_end_before': 8192, 'stake_held_for': 32768}, raising=False)
+    monkeypatch.setattr(MyIonCore, "get_config_17", lambda *_: {'minStake': 10000.0, 'maxStake': 10000000.0, 'maxStakeFactor': 1966080, 'minTotalStake': 200000.0}, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetConfig17", lambda *_: {'minStake': 10000.0, 'maxStake': 10000000.0, 'maxStakeFactor': 1966080, 'minTotalStake': 200000.0}, raising=False)
+    monkeypatch.setattr(MyIonCore, "get_full_config_addr", lambda *_: 'config_addr', raising=False)
+    monkeypatch.setattr(MyIonCore, "GetFullConfigAddr", lambda *_: 'config_addr', raising=False)
+    monkeypatch.setattr(MyIonCore, "get_full_elector_addr", lambda *_: 'elector_addr', raising=False)
+    monkeypatch.setattr(MyIonCore, "GetFullElectorAddr", lambda *_: 'elector_addr', raising=False)
+    monkeypatch.setattr(MyIonCore, "get_active_election_id", lambda *_: 0, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetActiveElectionId", lambda *_: 0, raising=False)
+    monkeypatch.setattr(MyIonCore, "GetValidatorIndex", lambda *_: 10)
+    monkeypatch.setattr(MyIonCore, "GetOffersNumber", lambda *_: None)
+    monkeypatch.setattr(MyIonCore, "GetComplaintsNumber", lambda *_: None)
+    monkeypatch.setattr(MyIonCore, "GetAccount", lambda *_: Dict({"balance": 1000}))
 
-    from mytoncore import functions as core_funcs
+    from myioncore import functions as core_funcs
     monkeypatch.setattr(core_funcs, "GetMemoryInfo", lambda: {'total': 0, 'usage': 0, 'usagePercent': 0})
     monkeypatch.setattr(core_funcs, "GetSwapInfo", lambda: {'total': 0, 'usage': 0, 'usagePercent': 0})
 
     output = cli.execute("status", no_color=True)
     assert "Traceback" not in output
     assert 'Error' not in output
-    assert 'TON network status' in output
+    assert 'ION network status' in output
     assert 'Network name: mainnet' in output
     assert 'Number of validators: 10(100)' in output
     assert 'Number of shardchains: 3' in output
     assert 'Number of offers: n/a(n/a)' in output
     assert 'Election status: closed' in output
 
-    assert 'TON network configuration' in output
+    assert 'ION network configuration' in output
     assert 'Configurator address: config_addr' in output
     assert 'Elector address: elector_addr' in output
     assert 'Validation period: 65536, Duration of elections: 32768-8192, Hold period: 32768' in output
     assert 'Minimum stake: 10000.0, Maximum stake: 10000000.0' in output
 
-    assert 'TON timestamps' in output
+    assert 'ION timestamps' in output
 
     # test fast
     output = cli.execute("status fast", no_color=True)
     assert 'Number of validators: n/a(100)' in output
 
     # test other mode
-    monkeypatch.setattr(MyTonCore, "using_validator", lambda *_: False)
-    monkeypatch.setattr(MyTonCore, "using_liteserver", lambda *_: True)
+    monkeypatch.setattr(MyIonCore, "using_validator", lambda *_: False)
+    monkeypatch.setattr(MyIonCore, "using_liteserver", lambda *_: True)
     output = cli.execute("status", no_color=True)
 
     assert 'Node mode: LITESERVER' in output
-    assert 'TON timestamps' not in output
-    assert 'TON network configuration' not in output
+    assert 'ION timestamps' not in output
+    assert 'ION network configuration' not in output
 
 
 def parse_modes_output(output: str) -> dict:
@@ -353,7 +353,7 @@ def parse_settings_output(output: str) -> dict:
         }
     return result
 
-def test_settings(cli, ton, monkeypatch):  # status_settings, get, set
+def test_settings(cli, ion, monkeypatch):  # status_settings, get, set
     from modules import SETTINGS
     output = cli.execute('status_settings', no_color=True)
     settings = parse_settings_output(output)
@@ -382,7 +382,7 @@ def test_settings(cli, ton, monkeypatch):  # status_settings, get, set
     assert settings['stake']['value'] == '1000'
     output = cli.execute('get stake', no_color=True)
     assert '1000' in output
-    assert ton.GetSettings('stake') == 1000
+    assert ion.GetSettings('stake') == 1000
 
     # bad args
     output = cli.execute("get", no_color=True)
@@ -393,14 +393,14 @@ def test_settings(cli, ton, monkeypatch):  # status_settings, get, set
     assert 'Bad args' in output
 
     # set for disabled mode
-    ton.disable_mode('validator')
+    ion.disable_mode('validator')
     output = cli.execute('set stake 1000', no_color=True)
     assert 'Error: mode validator is disabled' in output
 
     # set --force for disabled mode
     output = cli.execute('set stake 1000 --force', no_color=True)
     assert 'SetSettings - OK' in output
-    assert ton.GetSettings('stake') == 1000
+    assert ion.GetSettings('stake') == 1000
 
     # set unexisting setting
     output = cli.execute('set abc abc', no_color=True)
@@ -409,7 +409,7 @@ def test_settings(cli, ton, monkeypatch):  # status_settings, get, set
     # set --force for unexisting setting
     output = cli.execute('set abc abc --force', no_color=True)
     assert 'SetSettings - OK' in output
-    assert ton.GetSettings('abc') == 'abc'
+    assert ion.GetSettings('abc') == 'abc'
 
 def test_about(cli, monkeypatch):
     from modules import MODES
@@ -438,15 +438,15 @@ def test_download_archive_blocks(cli, monkeypatch):
         calls = args
         return
 
-    monkeypatch.setattr('mytonctrl.mytonctrl.download_blocks', download_blocks)
+    monkeypatch.setattr('myionctrl.myionctrl.download_blocks', download_blocks)
 
     output = cli.execute('download_archive_blocks test/ 1')
-    assert 'Failed to get Ton Storage API port and port was not provided' in output
-    monkeypatch.setattr('mytonctrl.mytonctrl.get_ton_storage_port', lambda *_: 3334)
+    assert 'Failed to get Ion Storage API port and port was not provided' in output
+    monkeypatch.setattr('myionctrl.myionctrl.get_ion_storage_port', lambda *_: 3334)
 
     # unable to connect
     output = cli.execute('download_archive_blocks test/ 1')
-    assert 'Error: cannot connect to ton-storage at 127.0.0.1:3334' in output
+    assert 'Error: cannot connect to ion-storage at 127.0.0.1:3334' in output
 
     monkeypatch.setattr(requests, 'get', lambda *_, **__: None)
 
@@ -454,28 +454,28 @@ def test_download_archive_blocks(cli, monkeypatch):
 
     assert 'Error' not in output
     assert calls[1:] == (str(pathlib.Path(os.getcwd()) / 'test/'), 1, None, False)
-    assert calls[0].buffer.ton_storage.api_port == 3334
+    assert calls[0].buffer.ion_storage.api_port == 3334
 
     output = cli.execute('download_archive_blocks test/ 1 2')
 
     assert 'Error' not in output
     assert calls[1:] == (str(pathlib.Path(os.getcwd()) / 'test/'), 1, 2, False)
-    assert calls[0].buffer.ton_storage.api_port == 3334
+    assert calls[0].buffer.ion_storage.api_port == 3334
 
     output = cli.execute('download_archive_blocks test/ 1 2 --only-master')
 
     assert 'Error' not in output
     assert calls[1:] == (str(pathlib.Path(os.getcwd()) / 'test/'), 1, 2, True)
-    assert calls[0].buffer.ton_storage.api_port == 3334
+    assert calls[0].buffer.ion_storage.api_port == 3334
 
     output = cli.execute('download_archive_blocks 123 test/ 1 2 --only-master')
 
     assert 'Error' not in output
     assert calls[1:] == (str(pathlib.Path(os.getcwd()) / 'test/'), 1, 2, True)
-    assert calls[0].buffer.ton_storage.api_port == 123
+    assert calls[0].buffer.ion_storage.api_port == 123
 
     output = cli.execute('download_archive_blocks 123 /test/ 1')
 
     assert 'Error' not in output
     assert calls[1:] == ('/test', 1, None, False)
-    assert calls[0].buffer.ton_storage.api_port == 123
+    assert calls[0].buffer.ion_storage.api_port == 123

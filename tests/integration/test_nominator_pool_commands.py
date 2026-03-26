@@ -6,12 +6,12 @@ from pytest_mock import MockerFixture
 
 from mypylib import Dict
 
-from mytoncore.mytoncore import MyTonCore
+from myioncore.myioncore import MyIonCore
 
 from tests.helpers import create_pool_file
 
 
-def test_new_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_new_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("new_pool", no_color=True)
     assert "Bad args" in output
@@ -20,10 +20,10 @@ def test_new_pool(cli, ton, monkeypatch, mocker: MockerFixture):
 
     # happy path
     download_contract_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "DownloadContract", download_contract_mock)
+    monkeypatch.setattr(MyIonCore, "DownloadContract", download_contract_mock)
 
     get_validator_wallet_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", get_validator_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", get_validator_wallet_mock)
 
     def fake_fift_run(args: list):
         file_path = args[-1]
@@ -31,10 +31,10 @@ def test_new_pool(cli, ton, monkeypatch, mocker: MockerFixture):
             f.write(b'\x00'*36)
         return "Saved pool"
 
-    monkeypatch.setattr(ton.fift, "Run", fake_fift_run)
+    monkeypatch.setattr(ion.fift, "Run", fake_fift_run)
 
     pool_name = "test_new_pool"
-    pool_path = ton.poolsDir + pool_name
+    pool_path = ion.poolsDir + pool_name
     addr_file = pool_path + ".addr"
     assert not os.path.exists(addr_file)
 
@@ -54,30 +54,30 @@ def test_new_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     assert 'Pool with the same parameters already exists' in output
 
 
-def test_activate_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_activate_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("activate_pool", no_color=True)
     assert "Bad args" in output
 
     # happy path
     pool_name = "test_activate_pool"
-    pool_path = ton.poolsDir + pool_name
+    pool_path = ion.poolsDir + pool_name
     create_pool_file(pool_path, b'\x00' * 36)
 
     account = Dict()
     account.status = "uninit"
     get_account_mock = mocker.Mock(return_value=account)
-    monkeypatch.setattr(MyTonCore, "GetAccount", get_account_mock)
+    monkeypatch.setattr(MyIonCore, "GetAccount", get_account_mock)
 
     validator_wallet = Dict()
     validator_wallet.addrB64 = "test_addr"
     get_validator_wallet_mock = mocker.Mock(return_value=validator_wallet)
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", get_validator_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", get_validator_wallet_mock)
 
     check_account_active_mock = mocker.Mock()
     send_file_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "check_account_active", check_account_active_mock)
-    monkeypatch.setattr(MyTonCore, "SendFile", send_file_mock)
+    monkeypatch.setattr(MyIonCore, "check_account_active", check_account_active_mock)
+    monkeypatch.setattr(MyIonCore, "SendFile", send_file_mock)
 
     output = cli.execute(f"activate_pool {pool_name}", no_color=True)
 
@@ -107,14 +107,14 @@ def test_activate_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     send_file_mock.assert_not_called()
 
 
-def test_update_validator_set(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_update_validator_set(cli, ion, monkeypatch, mocker: MockerFixture):
     output = cli.execute("update_validator_set", no_color=True)
     assert "Bad args" in output
 
     get_validator_wallet_mock = mocker.Mock()
     pool_update_validator_set_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", get_validator_wallet_mock)
-    monkeypatch.setattr(MyTonCore, "PoolUpdateValidatorSet", pool_update_validator_set_mock)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", get_validator_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "PoolUpdateValidatorSet", pool_update_validator_set_mock)
 
     output = cli.execute(f"update_validator_set test", no_color=True)
 
@@ -124,7 +124,7 @@ def test_update_validator_set(cli, ton, monkeypatch, mocker: MockerFixture):
     pool_update_validator_set_mock.assert_called_once_with('test', get_validator_wallet_mock.return_value)
 
 
-def test_withdraw_from_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_withdraw_from_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     output = cli.execute("withdraw_from_pool", no_color=True)
     assert "Bad args" in output
     output = cli.execute("withdraw_from_pool test", no_color=True)
@@ -133,10 +133,10 @@ def test_withdraw_from_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     pool_data = Dict()
     pool_data.state = 0
     get_pool_data_mock = mocker.Mock(return_value=pool_data)
-    monkeypatch.setattr(MyTonCore, "GetPoolData", get_pool_data_mock)
+    monkeypatch.setattr(MyIonCore, "GetPoolData", get_pool_data_mock)
 
     withdraw_from_pool_process_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "WithdrawFromPoolProcess", withdraw_from_pool_process_mock)
+    monkeypatch.setattr(MyIonCore, "WithdrawFromPoolProcess", withdraw_from_pool_process_mock)
 
     # happy path
     pool_addr = "test"
@@ -156,10 +156,10 @@ def test_withdraw_from_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     assert "WithdrawFromPool - OK" in output
     get_pool_data_mock.assert_called_once_with(pool_addr)
     withdraw_from_pool_process_mock.assert_not_called()
-    assert ton.GetPendingWithdraws()[pool_addr] == 100.5
+    assert ion.GetPendingWithdraws()[pool_addr] == 100.5
 
 
-def test_deposit_to_pool(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_deposit_to_pool(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("deposit_to_pool", no_color=True)
     assert "Bad args" in output
@@ -170,14 +170,14 @@ def test_deposit_to_pool(cli, ton, monkeypatch, mocker: MockerFixture):
     get_validator_wallet_mock = mocker.Mock()
     get_validator_wallet_mock.return_value.name = 'wallet_name'
     fift_run_mock = mocker.Mock(return_value="Success")
-    monkeypatch.setattr(MyTonCore, "GetValidatorWallet", get_validator_wallet_mock)
-    monkeypatch.setattr(ton.fift, "Run", fift_run_mock)
+    monkeypatch.setattr(MyIonCore, "GetValidatorWallet", get_validator_wallet_mock)
+    monkeypatch.setattr(ion.fift, "Run", fift_run_mock)
 
     result_file_path = "/tmp/signed.boc"
     sign_boc_mock = mocker.Mock(return_value=result_file_path)
-    monkeypatch.setattr(MyTonCore, "SignBocWithWallet", sign_boc_mock)
+    monkeypatch.setattr(MyIonCore, "SignBocWithWallet", sign_boc_mock)
     send_file_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "SendFile", send_file_mock)
+    monkeypatch.setattr(MyIonCore, "SendFile", send_file_mock)
 
     pool_addr = "test_addr"
     amount = 500.0

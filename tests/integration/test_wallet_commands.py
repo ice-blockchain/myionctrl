@@ -2,13 +2,13 @@ import os
 import base64
 
 from mypylib import Dict
-from mytoncore.mytoncore import MyTonCore
+from myioncore.myioncore import MyIonCore
 from modules.wallet import WalletModule
 
 from pytest_mock import MockerFixture
 
 
-def test_nw(cli, ton, monkeypatch):
+def test_nw(cli, ion, monkeypatch):
     created_wallet = Dict()
 
     def fake_create_wallet(self, wallet_name, workchain, version, subwallet):
@@ -23,7 +23,7 @@ def test_nw(cli, ton, monkeypatch):
         created_wallet = wallet
         return wallet
 
-    monkeypatch.setattr(MyTonCore, "CreateWallet", fake_create_wallet)
+    monkeypatch.setattr(MyIonCore, "CreateWallet", fake_create_wallet)
 
     # happy path
     output = cli.execute("nw", no_color=True)
@@ -72,7 +72,7 @@ def test_nw(cli, ton, monkeypatch):
     assert not created_wallet
 
 
-def test_aw(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_aw(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("aw", no_color=True)
     assert "Bad args" in output
@@ -80,8 +80,8 @@ def test_aw(cli, ton, monkeypatch, mocker: MockerFixture):
     get_local_wallet_mock = mocker.Mock()
     activate_wallet_mock = mocker.Mock()
     wallets_check_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetLocalWallet", get_local_wallet_mock)
-    monkeypatch.setattr(MyTonCore, "ActivateWallet", activate_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "GetLocalWallet", get_local_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "ActivateWallet", activate_wallet_mock)
     monkeypatch.setattr(WalletModule, '_wallets_check', wallets_check_mock)
 
     # happy path
@@ -104,11 +104,11 @@ def test_aw(cli, ton, monkeypatch, mocker: MockerFixture):
     assert "ActivateWallet - OK" in output
 
 
-def test_wl(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_wl(cli, ion, monkeypatch, mocker: MockerFixture):
     get_wallets_mock = mocker.Mock()
     get_account_mock = mocker.Mock()
     monkeypatch.setattr(WalletModule, 'get_wallets', get_wallets_mock)
-    monkeypatch.setattr(MyTonCore, "GetAccount", get_account_mock)
+    monkeypatch.setattr(MyIonCore, "GetAccount", get_account_mock)
 
     # no wallets
     get_wallets_mock.return_value = []
@@ -164,8 +164,8 @@ def test_wl(cli, ton, monkeypatch, mocker: MockerFixture):
 
 
 
-def test_iw(cli, ton, monkeypatch, tmp_path):
-    wallets_dir = ton.walletsDir
+def test_iw(cli, ion, monkeypatch, tmp_path):
+    wallets_dir = ion.walletsDir
 
     assert len(os.listdir(wallets_dir)) == 0
 
@@ -222,7 +222,7 @@ def test_iw(cli, ton, monkeypatch, tmp_path):
     assert f"{wallet_name2}.pk" in wallet_files
 
 
-def test_swv(cli, ton, monkeypatch):
+def test_swv(cli, ion, monkeypatch):
     # Bad args
     output = cli.execute("swv", no_color=True)
     assert "Bad args" in output
@@ -232,13 +232,13 @@ def test_swv(cli, ton, monkeypatch):
     # happy path
     test_addr = "test_addr"
     test_version = "v4"
-    wallets_version_list = ton.GetWalletsVersionList()
+    wallets_version_list = ion.GetWalletsVersionList()
     assert test_addr not in wallets_version_list
 
     output = cli.execute(f"swv {test_addr} {test_version}", no_color=True)
 
     assert "SetWalletVersion - OK" in output
-    wallets_version_list = ton.GetWalletsVersionList()
+    wallets_version_list = ion.GetWalletsVersionList()
     assert test_addr in wallets_version_list
     assert wallets_version_list[test_addr] == "v4"
 
@@ -248,7 +248,7 @@ def test_swv(cli, ton, monkeypatch):
     output = cli.execute(f"swv {test_addr} {test_version2}", no_color=True)
 
     assert "SetWalletVersion - OK" in output
-    wallets_version_list = ton.GetWalletsVersionList()
+    wallets_version_list = ion.GetWalletsVersionList()
     assert test_addr in wallets_version_list
     assert wallets_version_list[test_addr] == "v3"
 
@@ -259,7 +259,7 @@ def test_swv(cli, ton, monkeypatch):
     output = cli.execute(f"swv {test_addr2} {test_version3}", no_color=True)
 
     assert "SetWalletVersion - OK" in output
-    wallets_version_list = ton.GetWalletsVersionList()
+    wallets_version_list = ion.GetWalletsVersionList()
     assert test_addr in wallets_version_list
     assert wallets_version_list[test_addr] == "v3"
     assert test_addr2 in wallets_version_list
@@ -273,8 +273,8 @@ def create_wallet_files(base_path: str, pk: bytes, addr: bytes):
         f.write(addr)
 
 
-def test_ew(cli, ton, monkeypatch, tmp_path):
-    wallets_dir = ton.walletsDir
+def test_ew(cli, ion, monkeypatch, tmp_path):
+    wallets_dir = ion.walletsDir
 
     # Bad args
     output = cli.execute("ew", no_color=True)
@@ -286,7 +286,7 @@ def test_ew(cli, ton, monkeypatch, tmp_path):
     wallet_key_bytes = b"\x01"*32
     wallet_key_b64 = base64.b64encode(wallet_key_bytes).decode()
 
-    ton.GetWalletsVersionList()[wallet_addr] = "v3"  # avoid going to ton.GetAccount
+    ion.GetWalletsVersionList()[wallet_addr] = "v3"  # avoid going to ion.GetAccount
 
     wallet_path = wallets_dir + wallet_name
     create_wallet_files(wallet_path, wallet_key_bytes, b"\x00" * 32 + b'\xff\xff\xff\xff')
@@ -297,7 +297,7 @@ def test_ew(cli, ton, monkeypatch, tmp_path):
     assert f"Secret key: {wallet_key_b64}" in output
 
 
-def test_dw(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_dw(cli, ion, monkeypatch, mocker: MockerFixture):
     # Bad args
     output = cli.execute("dw", no_color=True)
     assert "Bad args" in output
@@ -309,10 +309,10 @@ def test_dw(cli, ton, monkeypatch, mocker: MockerFixture):
 
     # happy path
     wallet_name = 'test_wallet'
-    wallet_path = ton.walletsDir + wallet_name
+    wallet_path = ion.walletsDir + wallet_name
     create_wallet_files(wallet_path, b'\x01' * 32, b"\x00" * 32 + b'\xff\xff\xff\xff')
     wallet_addr = "Ef8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAU"
-    ton.GetWalletsVersionList()[wallet_addr] = "v3"  # avoid going to ton.GetAccount
+    ion.GetWalletsVersionList()[wallet_addr] = "v3"  # avoid going to ion.GetAccount
     assert os.path.exists(wallet_path + '.addr')
     assert os.path.exists(wallet_path + '.pk')
     monkeypatch.setattr('builtins.input', lambda _: 'yes')
@@ -322,13 +322,13 @@ def test_dw(cli, ton, monkeypatch, mocker: MockerFixture):
     assert not os.path.exists(wallet_path + '.pk')
 
 
-def test_mg(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_mg(cli, ion, monkeypatch, mocker: MockerFixture):
     get_local_wallet_mock = mocker.Mock()
     get_destination_addr_mock = mocker.Mock(return_value="dest_addr_parsed")
     move_coins_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetLocalWallet", get_local_wallet_mock)
-    monkeypatch.setattr(MyTonCore, "get_destination_addr", get_destination_addr_mock)
-    monkeypatch.setattr(MyTonCore, "MoveCoins", move_coins_mock)
+    monkeypatch.setattr(MyIonCore, "GetLocalWallet", get_local_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "get_destination_addr", get_destination_addr_mock)
+    monkeypatch.setattr(MyIonCore, "MoveCoins", move_coins_mock)
 
     # Bad args
     output = cli.execute("mg", no_color=True)
@@ -370,12 +370,12 @@ def test_mg(cli, ton, monkeypatch, mocker: MockerFixture):
     )
 
 
-def test_mgtp(cli, ton, monkeypatch, mocker: MockerFixture):
+def test_mgtp(cli, ion, monkeypatch, mocker: MockerFixture):
     get_local_wallet_mock = mocker.Mock()
     get_destination_addr_mock = mocker.Mock(return_value="dest_addr_parsed")
     do_move_coins_through_proxy_mock = mocker.Mock()
-    monkeypatch.setattr(MyTonCore, "GetLocalWallet", get_local_wallet_mock)
-    monkeypatch.setattr(MyTonCore, "get_destination_addr", get_destination_addr_mock)
+    monkeypatch.setattr(MyIonCore, "GetLocalWallet", get_local_wallet_mock)
+    monkeypatch.setattr(MyIonCore, "get_destination_addr", get_destination_addr_mock)
     monkeypatch.setattr(WalletModule, "do_move_coins_through_proxy", do_move_coins_through_proxy_mock)
 
     # Bad args

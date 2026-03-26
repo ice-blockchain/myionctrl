@@ -7,7 +7,7 @@ import requests
 
 from mypylib.mypylib import color_print, print_table, color_text, timeago, bcolors
 from modules.module import MtcModule
-from mytonctrl.console_cmd import add_command, check_usage_one_arg, check_usage_two_args
+from myionctrl.console_cmd import add_command, check_usage_one_arg, check_usage_two_args
 
 
 class UtilitiesModule(MtcModule):
@@ -19,9 +19,9 @@ class UtilitiesModule(MtcModule):
         if not check_usage_one_arg("vas", args):
             return
         addrB64 = args[0]
-        addrB64 = self.ton.get_destination_addr(addrB64)
-        account = self.ton.GetAccount(addrB64)
-        version = self.ton.GetVersionFromCodeHash(account.codeHash)
+        addrB64 = self.ion.get_destination_addr(addrB64)
+        account = self.ion.GetAccount(addrB64)
+        version = self.ion.GetVersionFromCodeHash(account.codeHash)
         statusTable = list()
         statusTable += [["Address", "Status", "Balance", "Version"]]
         statusTable += [[addrB64, account.status, account.balance, version]]
@@ -37,9 +37,9 @@ class UtilitiesModule(MtcModule):
     # end define
 
     def get_history_table(self, addr, limit):
-        addr = self.ton.get_destination_addr(addr)
-        account = self.ton.GetAccount(addr)
-        history = self.ton.GetAccountHistory(account, limit)
+        addr = self.ion.get_destination_addr(addr)
+        account = self.ion.GetAccount(addr)
+        history = self.ion.GetAccountHistory(account, limit)
         table = list()
         typeText = color_text("{red}{bold}{endc}")
         table += [["Time", typeText, "Coins", "From/To"]]
@@ -54,7 +54,7 @@ class UtilitiesModule(MtcModule):
             else:
                 type = color_text("{blue}{bold}<<<{endc}")
                 fromto = srcAddrFull
-            fromto = self.ton.AddrFull2AddrB64(fromto)
+            fromto = self.ion.AddrFull2AddrB64(fromto)
             # datetime = timestamp2datetime(message.time, "%Y.%m.%d %H:%M:%S")
             datetime = timeago(message.time)
             table += [[datetime, type, message.value, fromto]]
@@ -73,17 +73,17 @@ class UtilitiesModule(MtcModule):
             return
         name = args[0]
         addr = args[1]
-        if not self.ton.IsAddr(addr):
+        if not self.ion.IsAddr(addr):
             raise Exception("Incorrect address")
         bookmark = dict()
         bookmark["name"] = name
         bookmark["addr"] = addr
-        self.ton.AddBookmark(bookmark)
+        self.ion.AddBookmark(bookmark)
         color_print("CreatNewBookmark - {green}OK{endc}")
     # end define
 
     def print_bookmarks_list(self, args):
-        data = self.ton.GetBookmarks()
+        data = self.ion.GetBookmarks()
         if data is None or len(data) == 0:
             print("No data")
             return
@@ -101,7 +101,7 @@ class UtilitiesModule(MtcModule):
         if not check_usage_one_arg("db", args):
             return
         name = args[0]
-        self.ton.DeleteBookmark(name)
+        self.ion.DeleteBookmark(name)
         color_print("DeleteBookmark - {green}OK{endc}")
     # end define
 
@@ -117,7 +117,7 @@ class UtilitiesModule(MtcModule):
     # end define
 
     def print_offers_list(self, args):
-        data = self.ton.GetOffers()
+        data = self.ion.GetOffers()
         if data is None or len(data) == 0:
             print("No data")
             return
@@ -148,7 +148,7 @@ class UtilitiesModule(MtcModule):
 
     def get_offer_diff(self, offer_hash):
         self.local.add_log("start GetOfferDiff function", "debug")
-        offer = self.ton.GetOffer(offer_hash)
+        offer = self.ion.GetOffer(offer_hash)
         config_id = offer["config"]["id"]
         config_value = offer["config"]["value"]
         if config_id < 0:
@@ -161,11 +161,11 @@ class UtilitiesModule(MtcModule):
             config_value = config_value[start:end]
         # end if
 
-        args = [self.ton.liteClient.appPath, "--global-config", self.ton.liteClient.configPath, "--verbosity", "0"]
+        args = [self.ion.liteClient.appPath, "--global-config", self.ion.liteClient.configPath, "--verbosity", "0"]
         process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(1)
 
-        fullConfigAddr = self.ton.GetFullConfigAddr()
+        fullConfigAddr = self.ion.GetFullConfigAddr()
         cmd = "runmethodfull {fullConfigAddr} list_proposals".format(fullConfigAddr=fullConfigAddr)
         process.stdin.write(cmd.encode() + b'\n')
         process.stdin.flush()
@@ -204,15 +204,15 @@ class UtilitiesModule(MtcModule):
 
         buff = lines[start:end]
         text = "".join(buff)
-        newData = self.ton.Tlb2Json(text)
-        newFileName = self.ton.tempDir + "data1diff"
+        newData = self.ion.Tlb2Json(text)
+        newFileName = self.ion.tempDir + "data1diff"
         file = open(newFileName, 'wt')
         newText = json.dumps(newData, indent=2)
         file.write(newText)
         file.close()
 
-        oldData = self.ton.GetConfig(config_id)
-        oldFileName = self.ton.tempDir + "data2diff"
+        oldData = self.ion.GetConfig(config_id)
+        oldFileName = self.ion.tempDir + "data2diff"
         file = open(oldFileName, 'wt')
         oldText = json.dumps(oldData, indent=2)
         file.write(oldText)
@@ -231,7 +231,7 @@ class UtilitiesModule(MtcModule):
 
     def print_complaints_list(self, args):
         past = "past" in args
-        data = self.ton.GetComplaints(past=past)
+        data = self.ion.GetComplaints(past=past)
         if data is None or len(data) == 0:
             print("No data")
             return
@@ -263,7 +263,7 @@ class UtilitiesModule(MtcModule):
 
     def print_election_entries_list(self, args):
         past = "past" in args
-        data = self.ton.GetElectionEntries(past=past)
+        data = self.ion.GetElectionEntries(past=past)
         if data is None or len(data) == 0:
             print("No data")
             return
@@ -292,7 +292,7 @@ class UtilitiesModule(MtcModule):
     def print_validator_list(self, args):
         past = "past" in args
         fast = "fast" in args
-        data = self.ton.GetValidatorsList(past=past, fast=fast)
+        data = self.ion.GetValidatorsList(past=past, fast=fast)
         if data is None or len(data) == 0:
             print("No data")
             return
@@ -326,15 +326,15 @@ class UtilitiesModule(MtcModule):
     # end define
 
     def check_adnl_connection(self):
-        telemetry = self.ton.local.db.get("sendTelemetry", False)
-        check_adnl = self.ton.local.db.get("checkAdnl", telemetry)
+        telemetry = self.ion.local.db.get("sendTelemetry", False)
+        check_adnl = self.ion.local.db.get("checkAdnl", telemetry)
         if not check_adnl:
             return True, ''
         self.local.add_log('Checking ADNL connection to local node', 'info')
         hosts = ['45.129.96.53', '5.154.181.153', '2.56.126.137', '91.194.11.68', '45.12.134.214', '138.124.184.27',
                  '103.106.3.171']
         hosts = random.sample(hosts, k=3)
-        data = self.ton.get_local_adnl_data()
+        data = self.ion.get_local_adnl_data()
         error = ''
         ok = True
         for host in hosts:
@@ -354,16 +354,32 @@ class UtilitiesModule(MtcModule):
                 error = f'Failed to check ADNL connection to local node: {response.get("message")}'
         return ok, error
 
+    def get_seqno(self, args):
+        if not check_usage_one_arg("seqno", args):
+            return
+        wallet = self.ion.GetLocalWallet(args[0])
+        seqno = self.ion.GetSeqno(wallet)
+        print(args[0], "seqno:", seqno)
+    # end define
+
+    def get_config(self, args):
+        if not check_usage_one_arg("getconfig", args):
+            return
+        data = self.ion.GetConfig(int(args[0]))
+        text = json.dumps(data, indent=2)
+        print(text)
+    # end define
+
     def get_pool_data(self, args):
         if not check_usage_one_arg("get_pool_data", args):
             return
         pool_name = args[0]
-        if self.ton.IsAddr(pool_name):
+        if self.ion.IsAddr(pool_name):
             pool_addr = pool_name
         else:
-            pool = self.ton.GetLocalPool(pool_name)
+            pool = self.ion.GetLocalPool(pool_name)
             pool_addr = pool.addrB64
-        pool_data = self.ton.GetPoolData(pool_addr)
+        pool_data = self.ion.GetPoolData(pool_addr)
         print(json.dumps(pool_data, indent=4))
     # end define
 
@@ -378,4 +394,6 @@ class UtilitiesModule(MtcModule):
         add_command(self.local, console, "el", self.print_election_entries_list)
         add_command(self.local, console, "vl", self.print_validator_list)
         add_command(self.local, console, "cl", self.print_complaints_list)
+        add_command(self.local, console, "seqno", self.get_seqno)
+        add_command(self.local, console, "getconfig", self.get_config)
         add_command(self.local, console, "get_pool_data", self.get_pool_data)

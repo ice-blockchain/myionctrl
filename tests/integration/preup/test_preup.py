@@ -1,29 +1,29 @@
 import socket
 import subprocess
 
-from mytoncore import MyTonCore
-from mytonctrl import mytonctrl
+from myioncore import MyIonCore
+from myionctrl import myionctrl
 from pytest_mock import MockerFixture
 
 
-def test_check_mytonctrl_update(cli, monkeypatch):
-    monkeypatch.setattr(mytonctrl, 'warnings', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'check_installer_user', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'check_vport', lambda *_: None)
+def test_check_myionctrl_update(cli, monkeypatch):
+    monkeypatch.setattr(myionctrl, 'warnings', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_installer_user', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_vport', lambda *_: None)
 
-    monkeypatch.setattr(mytonctrl, 'check_git_update', lambda *_: True)
+    monkeypatch.setattr(myionctrl, 'check_git_update', lambda *_: True)
     output = cli.run_pre_up()
-    assert 'MyTonCtrl update available' in output
+    assert 'MyIonCtrl update available' in output
 
-    monkeypatch.setattr(mytonctrl, 'check_git_update', lambda *_: False)
+    monkeypatch.setattr(myionctrl, 'check_git_update', lambda *_: False)
     output = cli.run_pre_up()
-    assert 'MyTonCtrl update available' not in output
+    assert 'MyIonCtrl update available' not in output
 
 
 def test_check_installer_user(cli, monkeypatch, mocker: MockerFixture):
-    monkeypatch.setattr(mytonctrl, 'check_mytonctrl_update', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'warnings', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'check_vport', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_myionctrl_update', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'warnings', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_vport', lambda *_: None)
 
     whoami_result = mocker.Mock()
     whoami_result.stdout = b'testuser\n'
@@ -33,7 +33,7 @@ def test_check_installer_user(cli, monkeypatch, mocker: MockerFixture):
     run_mock = mocker.Mock(side_effect=[whoami_result, ls_result])
     monkeypatch.setattr(subprocess, 'run', run_mock)
     output = cli.run_pre_up()
-    assert 'mytonctrl was installed by another user' not in output
+    assert 'myionctrl was installed by another user' not in output
 
     whoami_result.stdout = b'currentuser\n'
     ls_result.stdout = b'total 0\n-rw-r--r-- 1 installeruser testuser 0 Jan 1 00:00 file\n'
@@ -41,16 +41,16 @@ def test_check_installer_user(cli, monkeypatch, mocker: MockerFixture):
     run_mock = mocker.Mock(side_effect=[whoami_result, ls_result])
     monkeypatch.setattr(subprocess, 'run', run_mock)
     output = cli.run_pre_up()
-    assert 'mytonctrl was installed by another user' in output
+    assert 'myionctrl was installed by another user' in output
     assert f'launch mtc with `installeruser` user' in output
 
 
 def test_check_vport(cli, monkeypatch, mocker: MockerFixture):
-    monkeypatch.setattr(mytonctrl, 'check_mytonctrl_update', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'warnings', lambda *_: None)
-    monkeypatch.setattr(mytonctrl, 'check_installer_user', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_myionctrl_update', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'warnings', lambda *_: None)
+    monkeypatch.setattr(myionctrl, 'check_installer_user', lambda *_: None)
 
-    monkeypatch.setattr(MyTonCore, 'GetValidatorConfig', mocker.Mock(side_effect=Exception('test error')))
+    monkeypatch.setattr(MyIonCore, 'GetValidatorConfig', mocker.Mock(side_effect=Exception('test error')))
     output = cli.run_pre_up()
     assert 'GetValidatorConfig error' in output
 
@@ -59,7 +59,7 @@ def test_check_vport(cli, monkeypatch, mocker: MockerFixture):
     addr_mock.ip = 16777343  # 127.0.0.1
     addr_mock.port = 8080
     vconfig_mock.addrs = [addr_mock]
-    monkeypatch.setattr(MyTonCore, 'GetValidatorConfig', lambda *_: vconfig_mock)
+    monkeypatch.setattr(MyIonCore, 'GetValidatorConfig', lambda *_: vconfig_mock)
 
     socket_mock = mocker.Mock()
     socket_mock.connect_ex.return_value = 0
